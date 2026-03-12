@@ -10,6 +10,47 @@ This document describes the current ProofChain API surface.
 
 ## Endpoints
 
+### `GET /`
+
+Return API metadata and route discovery information.
+
+When deployed from the Vercel `api/` directory, this handler is exposed at `/api`.
+The route paths returned in the payload are relative to the API mount.
+
+Response `200`:
+
+```json
+{
+  "name": "ProofChain API",
+  "product": "ProofChain API",
+  "status": "api-ready",
+  "phase": "Complete",
+  "capabilities": [
+    "event ingestion",
+    "block sealing",
+    "Merkle proofs",
+    "Ed25519 verification"
+  ],
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "description": "API index"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "description": "Health check"
+    }
+  ],
+  "docs": {
+    "api": "docs/API.md",
+    "deployment": "docs/DEPLOYMENT.md",
+    "project_status": "docs/PROJECT_STATUS.md"
+  }
+}
+```
+
 ### `POST /events`
 
 Ingest a new event.

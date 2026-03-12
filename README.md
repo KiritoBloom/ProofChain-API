@@ -26,6 +26,7 @@ Core guarantees:
 
 ## Features
 
+- `GET /api` discover live API status, capabilities, and route metadata
 - `POST /api/events` ingest events
 - `GET /api/events/:event_id` fetch stored events
 - `POST /api/blocks/create` seal pending events into signed blocks
@@ -119,6 +120,10 @@ Signing:
 - `SIGNING_KEY_ID`
 
 ## Primary Endpoints
+
+### `GET /api`
+
+Returns the live API index, including route discovery metadata for deployed environments.
 
 ### `POST /api/events`
 
