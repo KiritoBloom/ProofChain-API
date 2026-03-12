@@ -1,6 +1,6 @@
 import type { AppEnv } from "../config/env.js";
 
-export const CURRENT_PHASE = "Phase 2 - Core Integrity Libraries";
+export const CURRENT_PHASE = "Complete";
 
 export function buildIndexResponse(env: AppEnv) {
   return {
