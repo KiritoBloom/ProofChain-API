@@ -23,7 +23,8 @@ export default async function handler(request: IncomingMessage, response: Server
       signingKeyId: env.SIGNING_KEY_ID
     }),
     logger,
-    cronSecret: env.CRON_SECRET
+    cronSecret: env.CRON_SECRET,
+    blockSealToken: env.BLOCK_SEAL_TOKEN
   });
 
   await blockCreationHandler(request, response);

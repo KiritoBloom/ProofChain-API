@@ -4,7 +4,7 @@ import { loadEnv } from "../../src/lib/config/env.js";
 import { getProofChainPersistenceContext } from "../../src/lib/db/runtime.js";
 import { createLogger } from "../../src/lib/logging/logger.js";
 import { createGetEventByIdHandler } from "../../src/modules/events/http-handlers.js";
-import { createGetEventByIdService } from "../../src/modules/events/service.js";
+import { createGetEventByIdService, redactEventRecord } from "../../src/modules/events/service.js";
 
 export default async function handler(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const env = loadEnv();
@@ -15,6 +15,8 @@ export default async function handler(request: IncomingMessage, response: Server
     getEventById: createGetEventByIdService({
       eventRepository: persistenceContext.eventRepository
     }),
+    redactEventRecord,
+    eventReadToken: env.EVENT_READ_TOKEN,
     logger
   });
 

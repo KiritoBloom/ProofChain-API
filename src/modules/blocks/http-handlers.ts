@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { assertBearerToken } from "../../lib/http/auth.js";
 import { BadRequestError, MethodNotAllowedError, sendErrorResponse } from "../../lib/http/errors.js";
 import { readJsonBody } from "../../lib/http/read-json-body.js";
 import { guardBlockCreationRequest } from "../../lib/http/request-guards.js";
@@ -12,11 +13,12 @@ export function createBlockCreationHandler(dependencies: {
   sealBlock: (input: SealBlockInput) => Promise<SealBlockResult>;
   logger?: StructuredLogger;
   cronSecret?: string;
+  blockSealToken?: string;
 }) {
   return async function blockCreationHandler(request: IncomingMessage, response: ServerResponse): Promise<void> {
     try {
       guardBlockCreationRequest(request, response);
-      const input = await parseBlockCreateInput(request, dependencies.cronSecret);
+      const input = await parseBlockCreateInput(request, dependencies.cronSecret, dependencies.blockSealToken);
       const result = await dependencies.sealBlock(input);
 
       dependencies.logger?.info("Block sealed", {
@@ -35,8 +37,13 @@ export function createBlockCreationHandler(dependencies: {
   };
 }
 
-async function parseBlockCreateInput(request: IncomingMessage, cronSecret?: string): Promise<SealBlockInput> {
+async function parseBlockCreateInput(
+  request: IncomingMessage,
+  cronSecret?: string,
+  blockSealToken?: string
+): Promise<SealBlockInput> {
   if (request.method === "POST") {
+    assertBearerToken(request, blockSealToken, "A valid bearer token is required for manual block sealing.");
     const contentLength = request.headers["content-length"];
 
     if (!contentLength || contentLength === "0") {

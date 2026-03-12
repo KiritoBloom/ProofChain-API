@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { hashCanonicalJson } from "../../lib/crypto/hash.js";
 import { NotFoundError } from "../../lib/http/errors.js";
 import type { CanonicalJsonObject } from "../../types/integrity.js";
-import type { EventRecord, EventRepository } from "../../types/persistence.js";
+import type { EventRecord, EventRepository, PublicEventRecord } from "../../types/persistence.js";
 
 export interface IngestEventInput {
   service: string;
@@ -67,6 +67,21 @@ export function createGetEventByIdService(dependencies: { eventRepository: Event
     }
 
     return eventRecord;
+  };
+}
+
+export function redactEventRecord(record: EventRecord): PublicEventRecord {
+  return {
+    event_id: record.event_id,
+    schema_version: record.schema_version,
+    service: record.service,
+    type: record.type,
+    received_at: record.received_at,
+    hash: record.hash,
+    block_id: record.block_id,
+    created_at: record.created_at,
+    updated_at: record.updated_at,
+    payload_redacted: true
   };
 }
 

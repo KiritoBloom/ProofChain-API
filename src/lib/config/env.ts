@@ -6,6 +6,8 @@ const appEnvSchema = z.object({
   API_BASE_URL: z.string().url().default("http://localhost:3000"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   CRON_SECRET: z.string().min(1).optional(),
+  BLOCK_SEAL_TOKEN: z.string().min(1).optional(),
+  EVENT_READ_TOKEN: z.string().min(1).optional(),
   MONGODB_URI: z.string().min(1).optional(),
   MONGODB_DB_NAME: z.string().min(1).optional(),
   SIGNING_PRIVATE_KEY: z.string().min(1).optional(),

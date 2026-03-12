@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { hasTrustedProxyChain } from "./auth.js";
 import { HttpError } from "./errors.js";
 
 interface RateLimitRule {
@@ -70,7 +71,7 @@ function getOrCreateBucket(key: string, windowMs: number, now: number): RateLimi
 function getClientIdentifier(request: IncomingMessage): string {
   const forwarded = request.headers["x-forwarded-for"];
 
-  if (typeof forwarded === "string" && forwarded.trim().length > 0) {
+  if (hasTrustedProxyChain(request) && typeof forwarded === "string" && forwarded.trim().length > 0) {
     return forwarded.split(",")[0]?.trim() ?? "unknown";
   }
 

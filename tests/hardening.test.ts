@@ -38,7 +38,9 @@ describe("hardening", () => {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-forwarded-for": "203.0.113.10"
+          "x-forwarded-for": "203.0.113.10",
+          "x-forwarded-host": "proof-chain-api.vercel.app",
+          "x-forwarded-proto": "https"
         },
         body: JSON.stringify({
           service: "payment-service",
@@ -152,6 +154,37 @@ describe("hardening", () => {
         resolve();
       });
     });
+  });
+
+  it("does not trust spoofed forwarded headers without a full proxy chain", async () => {
+    const handler = createPostEventsHandler({
+      ingestEvent: async () => ({
+        event_id: "evt_test_001",
+        hash: "7f11573aa34834921911add16b7a02d75ab4c15c342868c135573aa3c767e285",
+        received_at: "2026-03-12T00:00:00.000Z"
+      })
+    });
+    const server = await startServer(handler);
+    servers.push(server);
+
+    let finalResponse: Response | undefined;
+
+    for (let index = 0; index < 31; index += 1) {
+      finalResponse = await fetch(`${server.baseUrl}/events`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": `203.0.113.${index}`
+        },
+        body: JSON.stringify({
+          service: "payment-service",
+          type: "transaction",
+          payload: { amount: 200 }
+        })
+      });
+    }
+
+    expect(finalResponse?.status).toBe(429);
   });
 });
 

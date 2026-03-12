@@ -13,11 +13,36 @@ export interface EventRecord {
   updated_at: string;
 }
 
+export interface PublicEventRecord {
+  event_id: string;
+  schema_version: 1;
+  service: string;
+  type: string;
+  received_at: string;
+  hash: string;
+  block_id: string | null;
+  created_at: string;
+  updated_at: string;
+  payload_redacted: true;
+}
+
 export interface BlockRecord {
   block_id: string;
   sequence: number;
   event_ids: string[];
   hashes: string[];
+  merkle_root: string;
+  signature: string;
+  algorithm: "Ed25519";
+  key_id: string;
+  sealed_at: string;
+  created_at: string;
+}
+
+export interface PublicBlockRecord {
+  block_id: string;
+  sequence: number;
+  event_count: number;
   merkle_root: string;
   signature: string;
   algorithm: "Ed25519";

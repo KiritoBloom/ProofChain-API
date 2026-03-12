@@ -40,6 +40,14 @@ export class MethodNotAllowedError extends HttpError {
   }
 }
 
+export class UnauthorizedError extends HttpError {
+  constructor(message = "Unauthorized") {
+    super(401, message, {
+      "www-authenticate": 'Bearer realm="proofchain"'
+    });
+  }
+}
+
 export class PayloadTooLargeError extends HttpError {
   constructor(maxBytes: number) {
     super(413, `Request body exceeds ${maxBytes} bytes.`);

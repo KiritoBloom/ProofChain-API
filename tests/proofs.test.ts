@@ -136,6 +136,26 @@ describe("proof retrieval and verification", () => {
     ).resolves.toEqual({ valid: false });
   });
 
+  it("rejects malformed verification input with a bad request error", async () => {
+    const fixture = await createSingleEventProofFixture();
+
+    await expect(
+      createVerifyProofService()({
+        schema_version: 1,
+        event_id: "evt_single_001",
+        event_hash: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+        block_id: "blk_single_001",
+        merkle_root: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+        algorithm: "Ed25519",
+        key_id: "main-dev-2026-03",
+        signature: fixture.signature,
+        sealed_at: "2026-03-12T22:17:43.980Z",
+        proof: [],
+        public_key: "not-a-public-key"
+      })
+    ).rejects.toThrow("Expected an Ed25519 public key.");
+  });
+
   it("returns an empty proof for a single-event block and still verifies it", async () => {
     const fixture = await createSingleEventProofFixture();
     const proof = await createGetProofByEventIdService({

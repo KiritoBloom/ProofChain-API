@@ -4,7 +4,7 @@ import { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createGetEventByIdHandler, createPostEventsHandler } from "../src/modules/events/http-handlers.js";
-import { createEventIngestionService, createGetEventByIdService } from "../src/modules/events/service.js";
+import { createEventIngestionService, createGetEventByIdService, redactEventRecord } from "../src/modules/events/service.js";
 import type { EventRecord, EventRepository } from "../src/types/persistence.js";
 
 class InMemoryEventRepository implements EventRepository {
@@ -71,7 +71,7 @@ describe("events API", () => {
     }
   });
 
-  it("creates and retrieves an event", async () => {
+  it("creates and retrieves a redacted event without a read token", async () => {
     const server = await startEventApiServer();
     servers.push(server);
 
@@ -105,6 +105,46 @@ describe("events API", () => {
     });
 
     const getResponse = await fetch(`${server.baseUrl}/events/${createdEvent.event_id}`);
+
+    expect(getResponse.status).toBe(200);
+    expect(await getResponse.json()).toEqual({
+      event_id: "evt_test_001",
+      schema_version: 1,
+      service: "payment-service",
+      type: "transaction",
+      received_at: "2026-03-12T00:00:00.000Z",
+      hash: "7f11573aa34834921911add16b7a02d75ab4c15c342868c135573aa3c767e285",
+      block_id: null,
+      created_at: "2026-03-12T00:00:00.000Z",
+      updated_at: "2026-03-12T00:00:00.000Z",
+      payload_redacted: true
+    });
+  });
+
+  it("returns the full event when the read token is provided", async () => {
+    const server = await startEventApiServer({ eventReadToken: "read-secret" });
+    servers.push(server);
+
+    await fetch(`${server.baseUrl}/events`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        service: "payment-service",
+        type: "transaction",
+        payload: {
+          amount: 200,
+          user_id: "1245"
+        }
+      })
+    });
+
+    const getResponse = await fetch(`${server.baseUrl}/events/evt_test_001`, {
+      headers: {
+        authorization: "Bearer read-secret"
+      }
+    });
 
     expect(getResponse.status).toBe(200);
     expect(await getResponse.json()).toEqual({
@@ -181,7 +221,7 @@ describe("events API", () => {
   });
 });
 
-async function startEventApiServer(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
+async function startEventApiServer(options: { eventReadToken?: string } = {}): Promise<{ baseUrl: string; close: () => Promise<void> }> {
   const repository = new InMemoryEventRepository();
   const postEventsHandler = createPostEventsHandler({
     ingestEvent: createEventIngestionService({
@@ -194,7 +234,9 @@ async function startEventApiServer(): Promise<{ baseUrl: string; close: () => Pr
     apiBaseUrl: "http://127.0.0.1:3001",
     getEventById: createGetEventByIdService({
       eventRepository: repository
-    })
+    }),
+    redactEventRecord,
+    eventReadToken: options.eventReadToken
   });
 
   const server = createServer(async (request, response) => {

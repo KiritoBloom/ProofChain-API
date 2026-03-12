@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { EventRecord } from "../../types/persistence.js";
+import type { EventRecord, PublicEventRecord } from "../../types/persistence.js";
 import { normalizeHashHex } from "../crypto/hash.js";
 import { jsonObjectSchema } from "./json.js";
 
@@ -35,4 +35,17 @@ export const eventRecordSchema: z.ZodType<EventRecord> = z.object({
   block_id: z.string().nullable(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime()
+});
+
+export const publicEventRecordSchema: z.ZodType<PublicEventRecord> = z.object({
+  event_id: eventIdSchema,
+  schema_version: z.literal(1),
+  service: z.string().min(1),
+  type: z.string().min(1),
+  received_at: z.string().datetime(),
+  hash: z.string().transform((value) => normalizeHashHex(value)),
+  block_id: z.string().nullable(),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+  payload_redacted: z.literal(true)
 });

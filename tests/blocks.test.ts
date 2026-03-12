@@ -210,7 +210,8 @@ describe("block sealing", () => {
         createBlockId: () => "blk_test_cron",
         signBlockPayload: (payload) => `signed:${payload}`,
         signingKeyId: "main-2026-01"
-      })
+      }),
+      blockSealToken: "manual-secret"
     });
 
     const server = await startBlockServer(handler);
@@ -295,6 +296,50 @@ describe("block sealing", () => {
     expect(await response.json()).toEqual({
       error: "GET /blocks/create is reserved for scheduled invocations."
     });
+  });
+
+  it("requires a bearer token for manual POST block sealing", async () => {
+    const eventRepository = new InMemoryEventRepository();
+    const blockRepository = new InMemoryBlockRepository();
+    await eventRepository.createEvent(baseEvents[0]);
+
+    const handler = createBlockCreationHandler({
+      sealBlock: createBlockSealingService({
+        blockRepository,
+        eventRepository,
+        now: () => "2026-03-12T00:05:00.000Z",
+        createBlockId: () => "blk_test_manual_auth",
+        signBlockPayload: (payload) => `signed:${payload}`,
+        signingKeyId: "main-2026-01"
+      }),
+      blockSealToken: "manual-secret"
+    });
+    const server = await startBlockServer(handler);
+    servers.push(server);
+
+    const unauthorized = await fetch(`${server.baseUrl}/blocks/create`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ max_events: 1 })
+    });
+
+    expect(unauthorized.status).toBe(401);
+    expect(await unauthorized.json()).toEqual({
+      error: "A valid bearer token is required for manual block sealing."
+    });
+
+    const authorized = await fetch(`${server.baseUrl}/blocks/create`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer manual-secret",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ max_events: 1 })
+    });
+
+    expect(authorized.status).toBe(201);
   });
 });
 

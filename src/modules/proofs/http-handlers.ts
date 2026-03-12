@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { MethodNotAllowedError, sendErrorResponse } from "../../lib/http/errors.js";
+import { enforceRateLimit } from "../../lib/http/rate-limit.js";
 import { readJsonBody } from "../../lib/http/read-json-body.js";
 import { guardProofVerificationRequest } from "../../lib/http/request-guards.js";
 import { sendJson } from "../../lib/http/send-json.js";
@@ -16,6 +17,11 @@ export function createGetProofHandler(dependencies: {
   return async function getProofHandler(request: IncomingMessage, response: ServerResponse): Promise<void> {
     try {
       assertMethod(request, "GET");
+      enforceRateLimit(request, response, {
+        keyPrefix: "proof:get",
+        windowMs: 60_000,
+        maxRequests: 60
+      });
 
       const requestUrl = new URL(request.url ?? "/", dependencies.apiBaseUrl);
       const pathSegments = requestUrl.pathname.split("/").filter(Boolean);

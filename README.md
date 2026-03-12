@@ -28,8 +28,8 @@ Core guarantees:
 
 - `GET /api` discover live API status, capabilities, and route metadata
 - `POST /api/events` ingest events
-- `GET /api/events/:event_id` fetch stored events
-- `POST /api/blocks/create` seal pending events into signed blocks
+- `GET /api/events/:event_id` fetch stored event metadata, with full payload access behind a bearer token
+- `POST /api/blocks/create` seal pending events into signed blocks with a bearer token
 - `GET /api/blocks` browse sealed block history
 - `GET /api/proof/:event_id` fetch a proof envelope for a sealed event
 - `POST /api/verify` verify a proof envelope with a public key
@@ -107,6 +107,8 @@ Application:
 - `API_BASE_URL`
 - `LOG_LEVEL`
 - `CRON_SECRET` optional but recommended for scheduled block sealing
+- `BLOCK_SEAL_TOKEN` required for manual `POST /api/blocks/create`
+- `EVENT_READ_TOKEN` required to read full event payloads from `GET /api/events/:event_id`
 
 Database:
 
@@ -141,6 +143,8 @@ Request:
 ```
 
 ### `POST /api/blocks/create`
+
+Requires `Authorization: Bearer <BLOCK_SEAL_TOKEN>` for manual requests.
 
 Request:
 
@@ -211,6 +215,8 @@ Typical flow after deployment:
 - treat hashing, proof generation, and signature behavior as security-sensitive
 - use a dedicated MongoDB user for deployment
 - protect scheduled sealing with `CRON_SECRET`
+- protect manual block sealing with `BLOCK_SEAL_TOKEN`
+- treat `EVENT_READ_TOKEN` like a secret because it unlocks stored event payloads
 
 ## Testing
 

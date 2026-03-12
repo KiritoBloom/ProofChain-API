@@ -82,7 +82,26 @@ Response `201`:
 
 Fetch a stored event record.
 
+By default this endpoint returns redacted event metadata only. To retrieve the full stored payload, send `Authorization: Bearer <EVENT_READ_TOKEN>`.
+
 Response `200`:
+
+```json
+{
+  "event_id": "evt_...",
+  "schema_version": 1,
+  "service": "payment-service",
+  "type": "transaction",
+  "received_at": "...",
+  "hash": "...",
+  "block_id": null,
+  "created_at": "...",
+  "updated_at": "...",
+  "payload_redacted": true
+}
+```
+
+Authenticated response `200`:
 
 ```json
 {
@@ -102,6 +121,8 @@ Response `200`:
 ### `POST /blocks/create`
 
 Seal unsealed events into a signed block.
+
+Manual requests must include `Authorization: Bearer <BLOCK_SEAL_TOKEN>`.
 
 Request:
 
@@ -228,6 +249,7 @@ proofchain verify proof.json --public-key "-----BEGIN PUBLIC KEY-----..."
 Common errors:
 
 - `400` invalid request or content-type
+- `401` missing or invalid bearer token
 - `404` missing event, block, or proof source
 - `405` method not allowed
 - `409` conflict, such as empty block sealing
@@ -240,4 +262,4 @@ Common errors:
 - JSON content-type required for `POST` routes
 - content-length checked before large body reads
 - request body size limits applied
-- rate limiting applied to ingestion, sealing, and verification routes
+- rate limiting applied to ingestion, sealing, proof retrieval, event reads, and verification routes

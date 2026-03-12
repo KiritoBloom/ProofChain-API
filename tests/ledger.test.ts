@@ -49,7 +49,30 @@ describe("public block ledger", () => {
 
     expect(result).toEqual({
       count: 2,
-      blocks: [blockFixtures()[1], blockFixtures()[0]]
+      blocks: [
+        {
+          block_id: "blk_002",
+          sequence: 2,
+          event_count: 1,
+          merkle_root: "1f54656502d08d1e5239cb51c08078265c535437925782f3774db3747f738e28",
+          signature: "signature-2",
+          algorithm: "Ed25519",
+          key_id: "main-2026-01",
+          sealed_at: "2026-03-12T00:10:00.000Z",
+          created_at: "2026-03-12T00:10:00.000Z"
+        },
+        {
+          block_id: "blk_001",
+          sequence: 1,
+          event_count: 2,
+          merkle_root: "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
+          signature: "signature-1",
+          algorithm: "Ed25519",
+          key_id: "main-2026-01",
+          sealed_at: "2026-03-12T00:05:00.000Z",
+          created_at: "2026-03-12T00:05:00.000Z"
+        }
+      ]
     });
   });
 
@@ -62,7 +85,30 @@ describe("public block ledger", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       count: 2,
-      blocks: [blockFixtures()[1], blockFixtures()[0]]
+      blocks: [
+        {
+          block_id: "blk_002",
+          sequence: 2,
+          event_count: 1,
+          merkle_root: "1f54656502d08d1e5239cb51c08078265c535437925782f3774db3747f738e28",
+          signature: "signature-2",
+          algorithm: "Ed25519",
+          key_id: "main-2026-01",
+          sealed_at: "2026-03-12T00:10:00.000Z",
+          created_at: "2026-03-12T00:10:00.000Z"
+        },
+        {
+          block_id: "blk_001",
+          sequence: 1,
+          event_count: 2,
+          merkle_root: "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
+          signature: "signature-1",
+          algorithm: "Ed25519",
+          key_id: "main-2026-01",
+          sealed_at: "2026-03-12T00:05:00.000Z",
+          created_at: "2026-03-12T00:05:00.000Z"
+        }
+      ]
     });
   });
 

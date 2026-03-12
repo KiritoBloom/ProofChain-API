@@ -1,6 +1,7 @@
 import type { IncomingMessage } from "node:http";
 
 import type { AppEnv } from "../config/env.js";
+import { hasTrustedProxyChain } from "../http/auth.js";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -86,7 +87,7 @@ function getRequestId(request: IncomingMessage): string {
 function getClientIp(request: IncomingMessage): string {
   const forwarded = request.headers["x-forwarded-for"];
 
-  if (typeof forwarded === "string" && forwarded.trim().length > 0) {
+  if (hasTrustedProxyChain(request) && typeof forwarded === "string" && forwarded.trim().length > 0) {
     return forwarded.split(",")[0]?.trim() ?? "unknown";
   }
 

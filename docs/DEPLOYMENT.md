@@ -16,6 +16,8 @@ Application:
 - `API_BASE_URL=https://your-project.vercel.app`
 - `LOG_LEVEL=info`
 - `CRON_SECRET=...` optional but strongly recommended for scheduled sealing
+- `BLOCK_SEAL_TOKEN=...` required for manual block sealing
+- `EVENT_READ_TOKEN=...` required for full event payload retrieval
 
 Database:
 
@@ -49,6 +51,12 @@ Signing:
 3. Publish or distribute the public key for verification clients.
 4. Track the key version with `SIGNING_KEY_ID`.
 
+## Access Control Setup
+
+1. Set `BLOCK_SEAL_TOKEN` to protect manual `POST /api/blocks/create` calls.
+2. Set `EVENT_READ_TOKEN` to protect full payload reads from `GET /api/events/:event_id`.
+3. Keep both values in Vercel environment variables only.
+
 ## Cron Setup
 
 The project supports scheduled block sealing through `GET /blocks/create` for cron-like requests.
@@ -64,13 +72,15 @@ If `CRON_SECRET` is configured, require it on scheduled block creation requests 
 Run these checks after deployment:
 
 1. ingest a sample event through `POST /events`
-2. fetch it through `GET /events/:event_id`
-3. seal a block through `POST /blocks/create` or cron
-4. fetch proof through `GET /proof/:event_id`
-5. verify it through `POST /verify`
+2. fetch it through `GET /events/:event_id` and confirm redacted metadata is returned without `EVENT_READ_TOKEN`
+3. fetch it again with `Authorization: Bearer <EVENT_READ_TOKEN>` and confirm the full payload is returned
+4. seal a block through `POST /blocks/create` with `Authorization: Bearer <BLOCK_SEAL_TOKEN>` or cron
+5. fetch proof through `GET /proof/:event_id`
+6. verify it through `POST /verify`
 
 ## Operational Notes
 
 - keep signing keys out of source control
 - rotate keys by updating `SIGNING_KEY_ID` and key material together
 - review logs for repeated `429`, `409`, or verification failures
+- rotate `BLOCK_SEAL_TOKEN` and `EVENT_READ_TOKEN` if they are exposed

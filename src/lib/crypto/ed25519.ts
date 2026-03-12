@@ -46,7 +46,13 @@ export function verifyEd25519Signature(
 }
 
 function toEd25519PrivateKey(input: PrivateKeyInput): KeyObject {
-  const key = typeof input === "string" ? createPrivateKey(input.trim()) : input;
+  let key: KeyObject;
+
+  try {
+    key = typeof input === "string" ? createPrivateKey(input.trim()) : input;
+  } catch {
+    throw new Error("Expected an Ed25519 private key.");
+  }
 
   if (key.type !== "private" || key.asymmetricKeyType !== "ed25519") {
     throw new Error("Expected an Ed25519 private key.");
@@ -56,7 +62,13 @@ function toEd25519PrivateKey(input: PrivateKeyInput): KeyObject {
 }
 
 function toEd25519PublicKey(input: PublicKeyInput): KeyObject {
-  const key = typeof input === "string" ? createPublicKey(input.trim()) : input;
+  let key: KeyObject;
+
+  try {
+    key = typeof input === "string" ? createPublicKey(input.trim()) : input;
+  } catch {
+    throw new Error("Expected an Ed25519 public key.");
+  }
 
   if (key.type !== "public" || key.asymmetricKeyType !== "ed25519") {
     throw new Error("Expected an Ed25519 public key.");
