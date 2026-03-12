@@ -136,6 +136,34 @@ describe("proof retrieval and verification", () => {
     ).resolves.toEqual({ valid: false });
   });
 
+  it("returns an empty proof for a single-event block and still verifies it", async () => {
+    const fixture = await createSingleEventProofFixture();
+    const proof = await createGetProofByEventIdService({
+      blockRepository: fixture.blockRepository,
+      eventRepository: fixture.eventRepository
+    })("evt_single_001");
+
+    expect(proof).toEqual({
+      schema_version: 1,
+      event_id: "evt_single_001",
+      event_hash: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+      block_id: "blk_single_001",
+      merkle_root: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+      algorithm: "Ed25519",
+      key_id: "main-dev-2026-03",
+      signature: fixture.signature,
+      sealed_at: "2026-03-12T22:17:43.980Z",
+      proof: []
+    });
+
+    await expect(
+      createVerifyProofService()({
+        ...proof,
+        public_key: fixture.publicKeyPem
+      })
+    ).resolves.toEqual({ valid: true });
+  });
+
   it("exposes proof and verify HTTP handlers", async () => {
     const fixture = await createProofFixture();
     const server = await startProofServer({
@@ -243,6 +271,50 @@ async function createProofFixture() {
   return {
     blockRepository,
     eventRepository: new InMemoryEventRepository(events),
+    publicKeyPem,
+    signature
+  };
+}
+
+async function createSingleEventProofFixture() {
+  const { privateKeyPem, publicKeyPem } = generateEd25519KeyPairPem();
+  const event: EventRecord = {
+    event_id: "evt_single_001",
+    schema_version: 1,
+    service: "payment-service",
+    type: "transaction",
+    payload: { amount: 125, status: "captured", user_id: "1245" },
+    received_at: "2026-03-12T22:17:30.000Z",
+    hash: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+    block_id: "blk_single_001",
+    created_at: "2026-03-12T22:17:30.000Z",
+    updated_at: "2026-03-12T22:17:43.980Z"
+  };
+  const merkleRoot = buildMerkleTree([event.hash]).root;
+  const signature = createEd25519BlockSigner(privateKeyPem)(
+    serializeSignedBlockPayload({
+      key_id: "main-dev-2026-03",
+      merkle_root: merkleRoot,
+      sealed_at: "2026-03-12T22:17:43.980Z"
+    })
+  );
+
+  return {
+    blockRepository: new InMemoryBlockRepository([
+      {
+        block_id: "blk_single_001",
+        sequence: 1,
+        event_ids: [event.event_id],
+        hashes: [event.hash],
+        merkle_root: merkleRoot,
+        signature,
+        algorithm: "Ed25519",
+        key_id: "main-dev-2026-03",
+        sealed_at: "2026-03-12T22:17:43.980Z",
+        created_at: "2026-03-12T22:17:43.980Z"
+      }
+    ]),
+    eventRepository: new InMemoryEventRepository([event]),
     publicKeyPem,
     signature
   };

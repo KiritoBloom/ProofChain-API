@@ -93,6 +93,10 @@ Scheduled compatibility:
 
 Retrieve a proof envelope for a sealed event.
 
+Note:
+
+- when a block contains exactly one event, the event hash is already the Merkle root, so `proof` is correctly returned as `[]`
+
 Response `200`:
 
 ```json
