@@ -212,6 +212,55 @@ describe("proof retrieval and verification", () => {
     expect(await verifyResponse.json()).toEqual({ valid: true });
   });
 
+  it("returns 400 for malformed verify HTTP requests", async () => {
+    const fixture = await createProofFixture();
+    const server = await startProofServer({
+      getProofByEventId: createGetProofByEventIdService({
+        blockRepository: fixture.blockRepository,
+        eventRepository: fixture.eventRepository
+      }),
+      verifyProof: createVerifyProofService()
+    });
+    servers.push(server);
+
+    const response = await fetch(`${server.baseUrl}/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        schema_version: 1,
+        event_id: "evt_bad",
+        event_hash: "x",
+        block_id: "blk_bad",
+        merkle_root: "x",
+        algorithm: "Ed25519",
+        key_id: "main-2026-01",
+        signature: "bad",
+        sealed_at: "bad",
+        proof: [],
+        public_key: "bad"
+      })
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Invalid request",
+      issues: [
+        {
+          message: "Expected a SHA-256 hex digest.",
+          path: "event_hash"
+        },
+        {
+          message: "Expected a SHA-256 hex digest.",
+          path: "merkle_root"
+        },
+        {
+          message: "Invalid datetime",
+          path: "sealed_at"
+        }
+      ]
+    });
+  });
+
   it("rejects proof requests for unsealed events", async () => {
     const eventRepository = new InMemoryEventRepository([
       {

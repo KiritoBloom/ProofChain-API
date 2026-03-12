@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { PublicBlockRecord } from "../../types/persistence.js";
-import { normalizeHashHex } from "../crypto/hash.js";
+import { sha256HexSchema } from "./hash.js";
 
 export const createBlockRequestSchema = z
   .object({
@@ -13,7 +13,7 @@ export const createBlockResponseSchema = z.object({
   block_id: z.string().regex(/^blk_[a-zA-Z0-9_-]+$/),
   sequence: z.number().int().positive(),
   event_count: z.number().int().positive(),
-  merkle_root: z.string().transform((value) => normalizeHashHex(value)),
+  merkle_root: sha256HexSchema,
   signature: z.string().min(1),
   algorithm: z.literal("Ed25519"),
   key_id: z.string().min(1),
@@ -28,8 +28,8 @@ export const blockRecordResponseSchema = z.object({
   block_id: z.string().regex(/^blk_[a-zA-Z0-9_-]+$/),
   sequence: z.number().int().positive(),
   event_ids: z.array(z.string()),
-  hashes: z.array(z.string().transform((value) => normalizeHashHex(value))),
-  merkle_root: z.string().transform((value) => normalizeHashHex(value)),
+  hashes: z.array(sha256HexSchema),
+  merkle_root: sha256HexSchema,
   signature: z.string().min(1),
   algorithm: z.literal("Ed25519"),
   key_id: z.string().min(1),
@@ -41,7 +41,7 @@ export const publicBlockRecordResponseSchema: z.ZodType<PublicBlockRecord> = z.o
   block_id: z.string().regex(/^blk_[a-zA-Z0-9_-]+$/),
   sequence: z.number().int().positive(),
   event_count: z.number().int().nonnegative(),
-  merkle_root: z.string().transform((value) => normalizeHashHex(value)),
+  merkle_root: sha256HexSchema,
   signature: z.string().min(1),
   algorithm: z.literal("Ed25519"),
   key_id: z.string().min(1),

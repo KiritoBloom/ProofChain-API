@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { EventRecord, PublicEventRecord } from "../../types/persistence.js";
-import { normalizeHashHex } from "../crypto/hash.js";
+import { sha256HexSchema } from "./hash.js";
 import { jsonObjectSchema } from "./json.js";
 
 export const eventIdSchema = z.string().regex(/^evt_[a-zA-Z0-9_-]+$/);
@@ -16,7 +16,7 @@ export const createEventRequestSchema = z
 
 export const createEventResponseSchema = z.object({
   event_id: eventIdSchema,
-  hash: z.string().transform((value) => normalizeHashHex(value)),
+  hash: sha256HexSchema,
   received_at: z.string().datetime()
 });
 
@@ -31,7 +31,7 @@ export const eventRecordSchema: z.ZodType<EventRecord> = z.object({
   type: z.string().min(1),
   payload: jsonObjectSchema,
   received_at: z.string().datetime(),
-  hash: z.string().transform((value) => normalizeHashHex(value)),
+  hash: sha256HexSchema,
   block_id: z.string().nullable(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime()
@@ -43,7 +43,7 @@ export const publicEventRecordSchema: z.ZodType<PublicEventRecord> = z.object({
   service: z.string().min(1),
   type: z.string().min(1),
   received_at: z.string().datetime(),
-  hash: z.string().transform((value) => normalizeHashHex(value)),
+  hash: sha256HexSchema,
   block_id: z.string().nullable(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
