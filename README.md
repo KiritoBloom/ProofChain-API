@@ -1,106 +1,247 @@
 # ProofChain API
 
-ProofChain API is a tamper-evident audit logging backend designed for verifiable event integrity.
+ProofChain API is a tamper-evident audit logging backend for verifiable event integrity.
 
-The system will ingest events, hash them deterministically, seal them into signed Merkle blocks, and return proofs that can be verified independently.
+It accepts events, hashes them deterministically, seals them into signed Merkle blocks, and returns proofs that can be verified independently by external clients.
 
-## Current Status
+## What It Does
 
-- Phase 1 scaffold is complete.
-- Phase 2 core integrity libraries are implemented.
-- Phase 7 hardening and release-readiness work is in progress.
-- Current checkpoint lives in `docs/planning/PROGRESS.md`.
+ProofChain is built for systems that need to prove an event record was not modified after ingestion.
+
+Typical use cases:
+
+- audit trails for internal operations
+- financial event logging
+- security event logging
+- admin action history
+- API request evidence
+- compliance and dispute investigation workflows
+
+Core guarantees:
+
+- event hashes are deterministic
+- block membership is proven with Merkle proofs
+- block roots are signed with Ed25519
+- proofs can be verified without hidden server state
+
+## Features
+
+- `POST /api/events` ingest events
+- `GET /api/events/:event_id` fetch stored events
+- `POST /api/blocks/create` seal pending events into signed blocks
+- `GET /api/blocks` browse sealed block history
+- `GET /api/proof/:event_id` fetch a proof envelope for a sealed event
+- `POST /api/verify` verify a proof envelope with a public key
+- `GET /api/keys/current` publish current verification key metadata
+- standalone CLI verifier for offline proof checking
+- proof export helper for portable verification files
+
+## Architecture
+
+The codebase is organized around small, explicit layers.
+
+```text
+api/                    # Vercel serverless entrypoints
+src/
+  modules/              # domain workflows and HTTP adapters
+  lib/                  # crypto, merkle, db, validation, logging, config
+  types/                # shared type definitions
+docs/                   # operational and API documentation
+tests/                  # unit and integration-style tests
+scripts/                # local demos and utility scripts
+bin/                    # CLI entrypoints
+```
+
+Key design principles:
+
+- thin HTTP layer
+- deterministic cryptographic behavior
+- sealed blocks are immutable
+- explicit schemas at system boundaries
+- verifiable proofs that do not rely on server-only state
 
 ## Stack
 
-- Node.js
+- Node.js 20+
 - TypeScript with strict mode
-- Vercel serverless API handlers
+- Vercel serverless functions
 - MongoDB Atlas
 - Zod for validation
 - Vitest for tests
 
-## Repository Layout
-
-```text
-api/
-src/
-  modules/
-  lib/
-  types/
-docs/
-  planning/
-tests/
-scripts/
-```
-
-## Scripts
-
-- `npm run demo` runs a one-shot integrity demo covering canonicalization, hashing, Merkle proofs, and signatures.
-- `npm run demo:server` runs a one-shot local scaffold route demo.
-- `npm run demo:proof` runs a proof retrieval and verification demo.
-- `npm run demo:cli` runs the standalone CLI verifier demo.
-- `npm run dev` starts a local demo server on `http://localhost:3000`.
-- `npm run check:env` validates the current environment shell and reports missing runtime secrets.
-- `npm run typecheck` runs TypeScript validation.
-- `npm run lint` runs ESLint.
-- `npm run test` runs Vitest.
-- `npm run verify` runs typecheck, lint, and tests together.
-
 ## Local Setup
 
-1. Copy `.env.example` to `.env` or set the variables in your shell.
-2. Install dependencies with `npm install`.
-3. Run `npm run demo` for a quick integrity demo.
-4. Run `npm run verify` before committing changes.
+1. Install dependencies:
 
-## Available Demo Routes
+```bash
+npm install
+```
 
-- `GET /`
-- `GET /health`
+2. Copy the example environment file:
 
-These routes only prove that the scaffold, configuration shell, and handler conventions are working. They are not the final ProofChain product endpoints.
+```bash
+cp .env.example .env
+```
 
-## Implemented Integrity Libraries
+3. Fill in required environment variables.
 
-- canonical JSON serialization
-- SHA-256 hashing helpers
-- deterministic Merkle tree construction with odd-leaf duplication
-- Merkle proof generation and verification
-- deterministic signed block payload serialization
-- Ed25519 signing and verification helpers
+4. Validate local configuration:
+
+```bash
+npm run check:env
+```
+
+5. Run the full verification suite:
+
+```bash
+npm run verify
+```
+
+## Environment Variables
+
+Application:
+
+- `NODE_ENV`
+- `APP_NAME`
+- `API_BASE_URL`
+- `LOG_LEVEL`
+- `CRON_SECRET` optional but recommended for scheduled block sealing
+
+Database:
+
+- `MONGODB_URI`
+- `MONGODB_DB_NAME`
+
+Signing:
+
+- `SIGNING_PRIVATE_KEY`
+- `SIGNING_PUBLIC_KEY`
+- `SIGNING_KEY_ID`
+
+## Primary Endpoints
+
+### `POST /api/events`
+
+Request:
+
+```json
+{
+  "service": "payment-service",
+  "type": "transaction",
+  "payload": {
+    "user_id": "1245",
+    "amount": 200
+  }
+}
+```
+
+### `POST /api/blocks/create`
+
+Request:
+
+```json
+{
+  "max_events": 100
+}
+```
+
+### `GET /api/proof/:event_id`
+
+Returns a versioned proof envelope for a sealed event.
+
+### `POST /api/verify`
+
+Verifies a proof envelope against a public key.
+
+### `GET /api/keys/current`
+
+Returns the currently published verification key metadata.
+
+For the full request and response shapes, see `docs/API.md`.
 
 ## CLI Verifier
 
-Use the standalone CLI verifier with:
+Verify an exported proof file locally:
 
 ```bash
 proofchain verify proof.json
 ```
 
-If the proof file does not include `public_key`, provide it manually:
+If the proof file does not include `public_key`:
 
 ```bash
 proofchain verify proof.json --public-key "-----BEGIN PUBLIC KEY-----..."
 ```
 
-## Publish Verification Key
+## Scripts
 
-The current verification key can be published at:
+- `npm run check:env` validate environment variables
+- `npm run typecheck` run TypeScript checks
+- `npm run lint` run ESLint
+- `npm run test` run Vitest
+- `npm run verify` run typecheck, lint, and tests together
+- `npm run demo` run the core integrity demo
+- `npm run demo:events` run event API demo
+- `npm run demo:blocks` run block sealing demo
+- `npm run demo:proof` run proof retrieval and verification demo
+- `npm run demo:ledger` run public ledger demo
+- `npm run demo:cli` run CLI verifier demo
+- `npm run demo:export` run proof export demo
 
-- `GET /keys/current`
+## How To Operate It
 
-This returns the active public key metadata for external verifiers.
+Typical flow after deployment:
 
-## Maintainer Docs
+1. client systems send events to `POST /api/events`
+2. scheduled or manual sealing creates signed blocks via `POST /api/blocks/create`
+3. proofs are fetched with `GET /api/proof/:event_id`
+4. proofs are verified with `POST /api/verify` or the CLI
+5. operators inspect block history with `GET /api/blocks`
 
-Read these in order:
+## Security Notes
 
-1. `docs/PROJECT_STATUS.md`
-2. `docs/planning/PROGRESS.md`
-3. `docs/planning/PHASES.md`
-4. `AGENTS.md`
-5. `docs/SECURITY.md`
-6. `docs/MAINTAINABILITY.md`
-7. `docs/API.md`
-8. `docs/DEPLOYMENT.md`
+- never commit private keys or `.env` files
+- rotate signing keys by replacing both key material and `SIGNING_KEY_ID`
+- publish only the public verification key
+- treat hashing, proof generation, and signature behavior as security-sensitive
+- use a dedicated MongoDB user for deployment
+- protect scheduled sealing with `CRON_SECRET`
+
+## Testing
+
+The test suite covers:
+
+- canonical JSON hashing
+- SHA-256 helpers
+- Merkle tree generation and verification
+- Ed25519 signing and verification
+- repository behavior
+- event API behavior
+- block sealing behavior
+- proof retrieval and verification
+- request hardening and structured logging
+- CLI verification and proof export
+
+Run all checks with:
+
+```bash
+npm run verify
+```
+
+## Deployment
+
+Deploy on Vercel with MongoDB Atlas.
+
+See:
+
+- `docs/DEPLOYMENT.md`
+- `docs/API.md`
+
+## Maintainer Notes
+
+If you are maintaining the project, start here:
+
+- `docs/API.md`
+- `docs/DEPLOYMENT.md`
+
+The project-local planning and workflow docs are intentionally kept out of version control.
