@@ -1,13 +1,16 @@
 import { z } from "zod";
 
 const appEnvSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   APP_NAME: z.string().min(1).default("ProofChain API"),
   API_BASE_URL: z.string().url().default("http://localhost:3000"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   CRON_SECRET: z.string().min(1).optional(),
   BLOCK_SEAL_TOKEN: z.string().min(1).optional(),
   EVENT_READ_TOKEN: z.string().min(1).optional(),
+  TRANSPARENCY_AUTO_ANCHOR: z.enum(["true", "false"]).default("true"),
   MONGODB_URI: z.string().min(1).optional(),
   MONGODB_DB_NAME: z.string().min(1).optional(),
   SIGNING_PRIVATE_KEY: z.string().min(1).optional(),

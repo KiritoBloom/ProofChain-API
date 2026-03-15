@@ -104,6 +104,7 @@ describe("hardening", () => {
       APP_NAME: "ProofChain API",
       API_BASE_URL: "http://localhost:3000",
       LOG_LEVEL: "info",
+      TRANSPARENCY_AUTO_ANCHOR: "true",
       MONGODB_URI: undefined,
       MONGODB_DB_NAME: undefined,
       SIGNING_PRIVATE_KEY: undefined,
@@ -117,15 +118,16 @@ describe("hardening", () => {
     });
 
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy.mock.calls[0]?.[0]).toContain("\"level\":\"info\"");
-    expect(spy.mock.calls[0]?.[0]).toContain("\"message\":\"Event ingested\"");
-    expect(spy.mock.calls[0]?.[0]).toContain("\"mongodb_uri\":\"[REDACTED]\"");
+    expect(spy.mock.calls[0]?.[0]).toContain('"level":"info"');
+    expect(spy.mock.calls[0]?.[0]).toContain('"message":"Event ingested"');
+    expect(spy.mock.calls[0]?.[0]).toContain('"mongodb_uri":"[REDACTED]"');
 
     spy.mockRestore();
   });
 
   it("publishes the current verification key metadata", async () => {
-    const { createGetCurrentKeyHandler } = await import("../src/modules/verification/public-key.js");
+    const { createGetCurrentKeyHandler } =
+      await import("../src/modules/verification/public-key.js");
     const server = createServer(async (request, response) => {
       await createGetCurrentKeyHandler({
         publicKey: "-----BEGIN PUBLIC KEY-----demo-----END PUBLIC KEY-----",

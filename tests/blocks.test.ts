@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createBlockCreationHandler } from "../src/modules/blocks/http-handlers.js";
 import { createBlockSealingService } from "../src/modules/blocks/service.js";
-import type { BlockRecord, BlockRepository, EventRecord, EventRepository } from "../src/types/persistence.js";
+import type {
+  BlockRecord,
+  BlockRepository,
+  EventRecord,
+  EventRepository
+} from "../src/types/persistence.js";
 
 class InMemoryEventRepository implements EventRepository {
   constructor(private readonly events = new Map<string, EventRecord>()) {}
@@ -23,7 +28,11 @@ class InMemoryEventRepository implements EventRepository {
   async listUnsealedEvents(limit: number): Promise<EventRecord[]> {
     return [...this.events.values()]
       .filter((event) => event.block_id === null)
-      .sort((left, right) => left.received_at.localeCompare(right.received_at) || left.event_id.localeCompare(right.event_id))
+      .sort(
+        (left, right) =>
+          left.received_at.localeCompare(right.received_at) ||
+          left.event_id.localeCompare(right.event_id)
+      )
       .slice(0, limit)
       .map((event) => structuredClone(event));
   }
@@ -52,7 +61,11 @@ class InMemoryEventRepository implements EventRepository {
   async getEventsByBlockId(blockId: string): Promise<EventRecord[]> {
     return [...this.events.values()]
       .filter((event) => event.block_id === blockId)
-      .sort((left, right) => left.received_at.localeCompare(right.received_at) || left.event_id.localeCompare(right.event_id))
+      .sort(
+        (left, right) =>
+          left.received_at.localeCompare(right.received_at) ||
+          left.event_id.localeCompare(right.event_id)
+      )
       .map((event) => structuredClone(event));
   }
 }
@@ -157,12 +170,14 @@ describe("block sealing", () => {
       block_id: "blk_test_001",
       sequence: 1,
       event_count: 2,
-      merkle_root: "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
+      merkle_root:
+        "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
       signature:
         'signed:{"algorithm":"Ed25519","key_id":"main-2026-01","merkle_root":"81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322","schema_version":1,"sealed_at":"2026-03-12T00:05:00.000Z"}',
       algorithm: "Ed25519",
       key_id: "main-2026-01",
-      sealed_at: "2026-03-12T00:05:00.000Z"
+      sealed_at: "2026-03-12T00:05:00.000Z",
+      anchor: null
     });
 
     expect(await blockRepository.getBlockById("blk_test_001")).toEqual({
@@ -173,7 +188,8 @@ describe("block sealing", () => {
         "442066b23e8685ce4ff87d9078e6ad9090009f7c3ce9a4dfac3d0e6014f9f699",
         "24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89"
       ],
-      merkle_root: "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
+      merkle_root:
+        "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
       signature:
         'signed:{"algorithm":"Ed25519","key_id":"main-2026-01","merkle_root":"81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322","schema_version":1,"sealed_at":"2026-03-12T00:05:00.000Z"}',
       algorithm: "Ed25519",
@@ -182,8 +198,12 @@ describe("block sealing", () => {
       created_at: "2026-03-12T00:05:00.000Z"
     });
 
-    expect((await eventRepository.getEventById("evt_001"))?.block_id).toBe("blk_test_001");
-    expect((await eventRepository.getEventById("evt_003"))?.block_id).toBeNull();
+    expect((await eventRepository.getEventById("evt_001"))?.block_id).toBe(
+      "blk_test_001"
+    );
+    expect(
+      (await eventRepository.getEventById("evt_003"))?.block_id
+    ).toBeNull();
   });
 
   it("prevents empty block creation", async () => {
@@ -229,12 +249,14 @@ describe("block sealing", () => {
       block_id: "blk_test_cron",
       sequence: 1,
       event_count: 1,
-      merkle_root: "24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89",
+      merkle_root:
+        "24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89",
       signature:
         'signed:{"algorithm":"Ed25519","key_id":"main-2026-01","merkle_root":"24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89","schema_version":1,"sealed_at":"2026-03-12T00:05:00.000Z"}',
       algorithm: "Ed25519",
       key_id: "main-2026-01",
-      sealed_at: "2026-03-12T00:05:00.000Z"
+      sealed_at: "2026-03-12T00:05:00.000Z",
+      anchor: null
     });
   });
 
@@ -258,12 +280,15 @@ describe("block sealing", () => {
     const server = await startBlockServer(handler);
     servers.push(server);
 
-    const missingSecretResponse = await fetch(`${server.baseUrl}/blocks/create`, {
-      method: "GET",
-      headers: {
-        "user-agent": "vercel-cron/1.0"
+    const missingSecretResponse = await fetch(
+      `${server.baseUrl}/blocks/create`,
+      {
+        method: "GET",
+        headers: {
+          "user-agent": "vercel-cron/1.0"
+        }
       }
-    });
+    );
 
     expect(missingSecretResponse.status).toBe(400);
     expect(await missingSecretResponse.json()).toEqual({
@@ -341,6 +366,47 @@ describe("block sealing", () => {
 
     expect(authorized.status).toBe(201);
   });
+
+  it("anchors new blocks when an anchor service is configured", async () => {
+    const eventRepository = new InMemoryEventRepository();
+    const blockRepository = new InMemoryBlockRepository();
+    await eventRepository.createEvent(baseEvents[0]);
+
+    const sealBlock = createBlockSealingService({
+      blockRepository,
+      eventRepository,
+      now: () => "2026-03-12T00:05:00.000Z",
+      createBlockId: () => "blk_test_anchor",
+      signBlockPayload: (payload) => `signed:${payload}`,
+      signingKeyId: "main-2026-01",
+      anchorBlock: async (block) => ({
+        schema_version: 1,
+        anchor_id: "anc_000001_test",
+        block_id: block.block_id,
+        block_sequence: block.sequence,
+        merkle_root: block.merkle_root,
+        signature: block.signature,
+        algorithm: block.algorithm,
+        key_id: block.key_id,
+        sealed_at: block.sealed_at,
+        prev_anchor_hash: null,
+        checkpoint:
+          "b4e3665117032d4b67d2d0f15710ca2f7925745f5675c4600af6684b87f0d793",
+        anchored_at: "2026-03-12T00:05:01.000Z",
+        created_at: "2026-03-12T00:05:01.000Z"
+      })
+    });
+
+    await expect(sealBlock({ max_events: 1 })).resolves.toMatchObject({
+      block_id: "blk_test_anchor",
+      anchor: {
+        anchor_id: "anc_000001_test",
+        block_id: "blk_test_anchor",
+        block_sequence: 1,
+        prev_anchor_hash: null
+      }
+    });
+  });
 });
 
 async function startBlockServer(
@@ -378,7 +444,11 @@ async function startBlockServer(
   };
 }
 
-type RequestLike = Parameters<typeof createBlockCreationHandler>[0] extends { sealBlock: never } ? never : Parameters<
+type RequestLike = Parameters<typeof createBlockCreationHandler>[0] extends {
+  sealBlock: never;
+}
+  ? never
+  : Parameters<ReturnType<typeof createBlockCreationHandler>>[0];
+type ResponseLike = Parameters<
   ReturnType<typeof createBlockCreationHandler>
->[0];
-type ResponseLike = Parameters<ReturnType<typeof createBlockCreationHandler>>[1];
+>[1];

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ProofEnvelope } from "../../types/integrity.js";
+import { publicAnchorRecordResponseSchema } from "./anchors.js";
 import { sha256HexSchema } from "./hash.js";
 
 const proofStepSchema = z.object({
@@ -22,15 +23,18 @@ const proofEnvelopeObjectSchema = z.object({
   key_id: z.string().min(1),
   signature: z.string().min(1),
   sealed_at: z.string().datetime(),
-  proof: z.array(proofStepSchema)
+  proof: z.array(proofStepSchema),
+  anchor: publicAnchorRecordResponseSchema.optional()
 });
 
-export const proofEnvelopeSchema: z.ZodType<ProofEnvelope> = proofEnvelopeObjectSchema;
+export const proofEnvelopeSchema: z.ZodType<ProofEnvelope> =
+  proofEnvelopeObjectSchema;
 
 export const verifyProofRequestSchema = proofEnvelopeObjectSchema.extend({
   public_key: z.string().min(1)
 });
 
 export const verifyProofResponseSchema = z.object({
-  valid: z.boolean()
+  valid: z.boolean(),
+  anchor_valid: z.boolean().optional()
 });

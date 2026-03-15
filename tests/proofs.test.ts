@@ -4,13 +4,27 @@ import { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { generateEd25519KeyPairPem } from "../src/lib/crypto/ed25519.js";
+import { computeTransparencyCheckpoint } from "../src/lib/crypto/transparency-anchor.js";
 import { buildMerkleTree } from "../src/lib/merkle/tree.js";
 import { serializeSignedBlockPayload } from "../src/lib/crypto/signed-block.js";
 import { createEd25519BlockSigner } from "../src/modules/blocks/service.js";
-import { createGetProofHandler, createVerifyProofHandler } from "../src/modules/proofs/http-handlers.js";
-import { createGetProofByEventIdService, createVerifyProofService } from "../src/modules/proofs/service.js";
+import {
+  createGetProofHandler,
+  createVerifyProofHandler
+} from "../src/modules/proofs/http-handlers.js";
+import {
+  createGetProofByEventIdService,
+  createVerifyProofService
+} from "../src/modules/proofs/service.js";
 import type { ProofEnvelope } from "../src/types/integrity.js";
-import type { BlockRecord, BlockRepository, EventRecord, EventRepository } from "../src/types/persistence.js";
+import type {
+  AnchorRecord,
+  AnchorRepository,
+  BlockRecord,
+  BlockRepository,
+  EventRecord,
+  EventRepository
+} from "../src/types/persistence.js";
 
 class InMemoryEventRepository implements EventRepository {
   constructor(private readonly events: EventRecord[]) {}
@@ -26,7 +40,10 @@ class InMemoryEventRepository implements EventRepository {
   }
 
   async listUnsealedEvents(limit: number): Promise<EventRecord[]> {
-    return this.events.filter((event) => event.block_id === null).slice(0, limit).map((event) => structuredClone(event));
+    return this.events
+      .filter((event) => event.block_id === null)
+      .slice(0, limit)
+      .map((event) => structuredClone(event));
   }
 
   async markEventsSealed(eventIds: string[], blockId: string): Promise<number> {
@@ -45,7 +62,11 @@ class InMemoryEventRepository implements EventRepository {
   async getEventsByBlockId(blockId: string): Promise<EventRecord[]> {
     return this.events
       .filter((event) => event.block_id === blockId)
-      .sort((left, right) => left.received_at.localeCompare(right.received_at) || left.event_id.localeCompare(right.event_id))
+      .sort(
+        (left, right) =>
+          left.received_at.localeCompare(right.received_at) ||
+          left.event_id.localeCompare(right.event_id)
+      )
       .map((event) => structuredClone(event));
   }
 }
@@ -64,7 +85,9 @@ class InMemoryBlockRepository implements BlockRepository {
   }
 
   async getLatestBlockSequence(): Promise<number | null> {
-    return this.blocks.length === 0 ? null : Math.max(...this.blocks.map((block) => block.sequence));
+    return this.blocks.length === 0
+      ? null
+      : Math.max(...this.blocks.map((block) => block.sequence));
   }
 
   async listBlocks(limit: number): Promise<BlockRecord[]> {
@@ -72,6 +95,41 @@ class InMemoryBlockRepository implements BlockRepository {
       .sort((left, right) => right.sequence - left.sequence)
       .slice(0, limit)
       .map((block) => structuredClone(block));
+  }
+}
+
+class InMemoryAnchorRepository implements AnchorRepository {
+  constructor(private readonly anchors: AnchorRecord[]) {}
+
+  async createAnchor(record: AnchorRecord): Promise<AnchorRecord> {
+    this.anchors.push(structuredClone(record));
+    return record;
+  }
+
+  async getAnchorByBlockId(blockId: string): Promise<AnchorRecord | null> {
+    const anchorRecord = this.anchors.find(
+      (anchor) => anchor.block_id === blockId
+    );
+    return anchorRecord ? structuredClone(anchorRecord) : null;
+  }
+
+  async getLatestAnchor(): Promise<AnchorRecord | null> {
+    if (this.anchors.length === 0) {
+      return null;
+    }
+
+    return structuredClone(
+      [...this.anchors].sort(
+        (left, right) => right.block_sequence - left.block_sequence
+      )[0]
+    );
+  }
+
+  async listAnchors(limit: number): Promise<AnchorRecord[]> {
+    return [...this.anchors]
+      .sort((left, right) => right.block_sequence - left.block_sequence)
+      .slice(0, limit)
+      .map((anchor) => structuredClone(anchor));
   }
 }
 
@@ -90,6 +148,7 @@ describe("proof retrieval and verification", () => {
   it("returns a proof and verifies it successfully", async () => {
     const fixture = await createProofFixture();
     const proof = await createGetProofByEventIdService({
+      anchorRepository: fixture.anchorRepository,
       blockRepository: fixture.blockRepository,
       eventRepository: fixture.eventRepository
     })("evt_002");
@@ -97,9 +156,11 @@ describe("proof retrieval and verification", () => {
     expect(proof).toEqual({
       schema_version: 1,
       event_id: "evt_002",
-      event_hash: "24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89",
+      event_hash:
+        "24453df4d1e7f7c5f7b8d05cc63e4d8fd7d5b3d7d0f7ddfdb8421d9d38ff4a89",
       block_id: "blk_001",
-      merkle_root: "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
+      merkle_root:
+        "81bbdbd23d0a3b8cb6c8423d94b0c4cc032b3a893898dd364f2a8dc82bc9f322",
       algorithm: "Ed25519",
       key_id: "main-2026-01",
       signature: fixture.signature,
@@ -109,7 +170,8 @@ describe("proof retrieval and verification", () => {
           position: "left",
           hash: "442066b23e8685ce4ff87d9078e6ad9090009f7c3ce9a4dfac3d0e6014f9f699"
         }
-      ]
+      ],
+      anchor: fixture.anchor
     });
 
     await expect(
@@ -117,12 +179,13 @@ describe("proof retrieval and verification", () => {
         ...proof,
         public_key: fixture.publicKeyPem
       })
-    ).resolves.toEqual({ valid: true });
+    ).resolves.toEqual({ valid: true, anchor_valid: true });
   });
 
   it("returns false for tampered proofs", async () => {
     const fixture = await createProofFixture();
     const proof = await createGetProofByEventIdService({
+      anchorRepository: fixture.anchorRepository,
       blockRepository: fixture.blockRepository,
       eventRepository: fixture.eventRepository
     })("evt_002");
@@ -130,10 +193,11 @@ describe("proof retrieval and verification", () => {
     await expect(
       createVerifyProofService()({
         ...proof,
-        merkle_root: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        merkle_root:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         public_key: fixture.publicKeyPem
       })
-    ).resolves.toEqual({ valid: false });
+    ).resolves.toEqual({ valid: false, anchor_valid: false });
   });
 
   it("rejects malformed verification input with a bad request error", async () => {
@@ -143,9 +207,11 @@ describe("proof retrieval and verification", () => {
       createVerifyProofService()({
         schema_version: 1,
         event_id: "evt_single_001",
-        event_hash: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+        event_hash:
+          "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
         block_id: "blk_single_001",
-        merkle_root: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+        merkle_root:
+          "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
         algorithm: "Ed25519",
         key_id: "main-dev-2026-03",
         signature: fixture.signature,
@@ -159,6 +225,7 @@ describe("proof retrieval and verification", () => {
   it("returns an empty proof for a single-event block and still verifies it", async () => {
     const fixture = await createSingleEventProofFixture();
     const proof = await createGetProofByEventIdService({
+      anchorRepository: fixture.anchorRepository,
       blockRepository: fixture.blockRepository,
       eventRepository: fixture.eventRepository
     })("evt_single_001");
@@ -166,14 +233,17 @@ describe("proof retrieval and verification", () => {
     expect(proof).toEqual({
       schema_version: 1,
       event_id: "evt_single_001",
-      event_hash: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+      event_hash:
+        "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
       block_id: "blk_single_001",
-      merkle_root: "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
+      merkle_root:
+        "3f53dca7dc9f725905066db21b0c296ed1c4c0c84419c02b27ced7a461e63226",
       algorithm: "Ed25519",
       key_id: "main-dev-2026-03",
       signature: fixture.signature,
       sealed_at: "2026-03-12T22:17:43.980Z",
-      proof: []
+      proof: [],
+      anchor: fixture.anchor
     });
 
     await expect(
@@ -181,13 +251,14 @@ describe("proof retrieval and verification", () => {
         ...proof,
         public_key: fixture.publicKeyPem
       })
-    ).resolves.toEqual({ valid: true });
+    ).resolves.toEqual({ valid: true, anchor_valid: true });
   });
 
   it("exposes proof and verify HTTP handlers", async () => {
     const fixture = await createProofFixture();
     const server = await startProofServer({
       getProofByEventId: createGetProofByEventIdService({
+        anchorRepository: fixture.anchorRepository,
         blockRepository: fixture.blockRepository,
         eventRepository: fixture.eventRepository
       }),
@@ -209,13 +280,17 @@ describe("proof retrieval and verification", () => {
     });
 
     expect(verifyResponse.status).toBe(200);
-    expect(await verifyResponse.json()).toEqual({ valid: true });
+    expect(await verifyResponse.json()).toEqual({
+      valid: true,
+      anchor_valid: true
+    });
   });
 
   it("returns 400 for malformed verify HTTP requests", async () => {
     const fixture = await createProofFixture();
     const server = await startProofServer({
       getProofByEventId: createGetProofByEventIdService({
+        anchorRepository: fixture.anchorRepository,
         blockRepository: fixture.blockRepository,
         eventRepository: fixture.eventRepository
       }),
@@ -279,6 +354,7 @@ describe("proof retrieval and verification", () => {
 
     await expect(
       createGetProofByEventIdService({
+        anchorRepository: new InMemoryAnchorRepository([]),
         blockRepository: new InMemoryBlockRepository([]),
         eventRepository
       })("evt_010")
@@ -336,8 +412,32 @@ async function createProofFixture() {
       created_at: "2026-03-12T00:05:00.000Z"
     }
   ]);
+  const anchor = {
+    schema_version: 1 as const,
+    anchor_id: "anc_000001_test",
+    block_id: "blk_001",
+    block_sequence: 1,
+    merkle_root: merkleRoot,
+    signature,
+    algorithm: "Ed25519" as const,
+    key_id: "main-2026-01",
+    sealed_at: "2026-03-12T00:05:00.000Z",
+    prev_anchor_hash: null,
+    anchored_at: "2026-03-12T00:06:00.000Z",
+    created_at: "2026-03-12T00:06:00.000Z"
+  };
 
   return {
+    anchor: {
+      ...anchor,
+      checkpoint: computeTransparencyCheckpoint(anchor)
+    },
+    anchorRepository: new InMemoryAnchorRepository([
+      {
+        ...anchor,
+        checkpoint: computeTransparencyCheckpoint(anchor)
+      }
+    ]),
     blockRepository,
     eventRepository: new InMemoryEventRepository(events),
     publicKeyPem,
@@ -367,8 +467,32 @@ async function createSingleEventProofFixture() {
       sealed_at: "2026-03-12T22:17:43.980Z"
     })
   );
+  const anchor = {
+    schema_version: 1 as const,
+    anchor_id: "anc_000001_single",
+    block_id: "blk_single_001",
+    block_sequence: 1,
+    merkle_root: merkleRoot,
+    signature,
+    algorithm: "Ed25519" as const,
+    key_id: "main-dev-2026-03",
+    sealed_at: "2026-03-12T22:17:43.980Z",
+    prev_anchor_hash: null,
+    anchored_at: "2026-03-12T22:17:50.000Z",
+    created_at: "2026-03-12T22:17:50.000Z"
+  };
 
   return {
+    anchor: {
+      ...anchor,
+      checkpoint: computeTransparencyCheckpoint(anchor)
+    },
+    anchorRepository: new InMemoryAnchorRepository([
+      {
+        ...anchor,
+        checkpoint: computeTransparencyCheckpoint(anchor)
+      }
+    ]),
     blockRepository: new InMemoryBlockRepository([
       {
         block_id: "blk_single_001",
@@ -391,7 +515,9 @@ async function createSingleEventProofFixture() {
 
 async function startProofServer(dependencies: {
   getProofByEventId: (eventId: string) => Promise<unknown>;
-  verifyProof: (input: ProofEnvelope & { public_key: string }) => Promise<{ valid: boolean }>;
+  verifyProof: (
+    input: ProofEnvelope & { public_key: string }
+  ) => Promise<{ valid: boolean; anchor_valid?: boolean }>;
 }): Promise<{ baseUrl: string; close: () => Promise<void> }> {
   const getProofHandler = createGetProofHandler({
     apiBaseUrl: "http://127.0.0.1:3004",

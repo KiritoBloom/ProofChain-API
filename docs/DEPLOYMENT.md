@@ -18,6 +18,7 @@ Application:
 - `CRON_SECRET=...` optional but strongly recommended for scheduled sealing
 - `BLOCK_SEAL_TOKEN=...` required for manual block sealing
 - `EVENT_READ_TOKEN=...` required for full event payload retrieval
+- `TRANSPARENCY_AUTO_ANCHOR=true` recommended so every newly sealed block is checkpointed automatically
 
 Database:
 
@@ -75,12 +76,13 @@ Run these checks after deployment:
 2. fetch it through `GET /events/:event_id` and confirm redacted metadata is returned without `EVENT_READ_TOKEN`
 3. fetch it again with `Authorization: Bearer <EVENT_READ_TOKEN>` and confirm the full payload is returned
 4. seal a block through `POST /blocks/create` with `Authorization: Bearer <BLOCK_SEAL_TOKEN>` or cron
-5. fetch proof through `GET /proof/:event_id`
-6. verify it through `POST /verify`
+5. fetch the resulting anchor through `GET /anchors/:block_id`
+6. fetch proof through `GET /proof/:event_id`
+7. verify it through `POST /verify` and confirm `anchor_valid` is returned when an anchor is present
 
 ## Operational Notes
 
 - keep signing keys out of source control
 - rotate keys by updating `SIGNING_KEY_ID` and key material together
-- review logs for repeated `429`, `409`, or verification failures
+- review logs for repeated `429`, `409`, anchor gaps, or verification failures
 - rotate `BLOCK_SEAL_TOKEN` and `EVENT_READ_TOKEN` if they are exposed

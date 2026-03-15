@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { z } from "zod";
 
+import { publicAnchorRecordResponseSchema } from "../validation/anchors.js";
 import { proofEnvelopeSchema } from "../validation/proofs.js";
 import { verifyProofEnvelope } from "./proofs.js";
 
@@ -21,6 +22,7 @@ const proofFileSchema = z.object({
       hash: z.string()
     })
   ),
+  anchor: publicAnchorRecordResponseSchema.optional(),
   public_key: z.string().min(1).optional()
 });
 
@@ -31,25 +33,33 @@ export interface VerifyProofFileOptions {
 
 export interface VerifyProofFileResult {
   valid: boolean;
+  anchorValid?: boolean;
   proof: z.infer<typeof proofEnvelopeSchema>;
   publicKey: string;
 }
 
-export async function verifyProofFile(options: VerifyProofFileOptions): Promise<VerifyProofFileResult> {
+export async function verifyProofFile(
+  options: VerifyProofFileOptions
+): Promise<VerifyProofFileResult> {
   const fileContents = await readFile(options.proofFilePath, "utf8");
   const parsed = proofFileSchema.parse(JSON.parse(fileContents));
   const publicKey = options.publicKey ?? parsed.public_key;
 
   if (!publicKey) {
-    throw new Error("A public key is required. Provide it in the proof file or with --public-key.");
+    throw new Error(
+      "A public key is required. Provide it in the proof file or with --public-key."
+    );
   }
 
   const { public_key: _ignored, ...proof } = parsed;
 
   void _ignored;
 
+  const verification = verifyProofEnvelope(proof, publicKey);
+
   return {
-    valid: verifyProofEnvelope(proof, publicKey).valid,
+    valid: verification.valid,
+    anchorValid: verification.anchor_valid,
     proof,
     publicKey
   };

@@ -1,6 +1,10 @@
 import type { IndexDescription } from "mongodb";
 
-import { BLOCKS_COLLECTION, EVENTS_COLLECTION } from "./collections.js";
+import {
+  ANCHORS_COLLECTION,
+  BLOCKS_COLLECTION,
+  EVENTS_COLLECTION
+} from "./collections.js";
 
 const eventIndexes: IndexDescription[] = [
   {
@@ -27,11 +31,39 @@ const blockIndexes: IndexDescription[] = [
   }
 ];
 
+const anchorIndexes: IndexDescription[] = [
+  {
+    key: { anchor_id: 1 },
+    name: "anchor_id_unique",
+    unique: true
+  },
+  {
+    key: { block_id: 1 },
+    name: "anchor_block_id_unique",
+    unique: true
+  },
+  {
+    key: { block_sequence: 1 },
+    name: "anchor_block_sequence_unique",
+    unique: true
+  },
+  {
+    key: { checkpoint: 1 },
+    name: "anchor_checkpoint_unique",
+    unique: true
+  }
+];
+
 export async function ensureProofChainIndexes(db: Db): Promise<void> {
   const eventCollection = db.collection(EVENTS_COLLECTION);
   const blockCollection = db.collection(BLOCKS_COLLECTION);
+  const anchorCollection = db.collection(ANCHORS_COLLECTION);
 
-  await Promise.all([eventCollection.createIndexes(eventIndexes), blockCollection.createIndexes(blockIndexes)]);
+  await Promise.all([
+    eventCollection.createIndexes(eventIndexes),
+    blockCollection.createIndexes(blockIndexes),
+    anchorCollection.createIndexes(anchorIndexes)
+  ]);
 }
 
 interface Db {

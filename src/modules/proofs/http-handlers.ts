@@ -1,11 +1,19 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { MethodNotAllowedError, sendErrorResponse } from "../../lib/http/errors.js";
+import {
+  MethodNotAllowedError,
+  sendErrorResponse
+} from "../../lib/http/errors.js";
 import { enforceRateLimit } from "../../lib/http/rate-limit.js";
 import { readJsonBody } from "../../lib/http/read-json-body.js";
 import { guardProofVerificationRequest } from "../../lib/http/request-guards.js";
 import { sendJson } from "../../lib/http/send-json.js";
-import { getProofParamsSchema, proofEnvelopeSchema, verifyProofRequestSchema, verifyProofResponseSchema } from "../../lib/validation/proofs.js";
+import {
+  getProofParamsSchema,
+  proofEnvelopeSchema,
+  verifyProofRequestSchema,
+  verifyProofResponseSchema
+} from "../../lib/validation/proofs.js";
 import type { StructuredLogger } from "../../lib/logging/logger.js";
 import type { ProofEnvelope } from "../../types/integrity.js";
 
@@ -14,7 +22,10 @@ export function createGetProofHandler(dependencies: {
   getProofByEventId: (eventId: string) => Promise<ProofEnvelope>;
   logger?: StructuredLogger;
 }) {
-  return async function getProofHandler(request: IncomingMessage, response: ServerResponse): Promise<void> {
+  return async function getProofHandler(
+    request: IncomingMessage,
+    response: ServerResponse
+  ): Promise<void> {
     try {
       assertMethod(request, "GET");
       enforceRateLimit(request, response, {
@@ -45,10 +56,15 @@ export function createGetProofHandler(dependencies: {
 }
 
 export function createVerifyProofHandler(dependencies: {
-  verifyProof: (input: ProofEnvelope & { public_key: string }) => Promise<{ valid: boolean }>;
+  verifyProof: (
+    input: ProofEnvelope & { public_key: string }
+  ) => Promise<{ valid: boolean; anchor_valid?: boolean }>;
   logger?: StructuredLogger;
 }) {
-  return async function verifyProofHandler(request: IncomingMessage, response: ServerResponse): Promise<void> {
+  return async function verifyProofHandler(
+    request: IncomingMessage,
+    response: ServerResponse
+  ): Promise<void> {
     try {
       assertMethod(request, "POST");
       guardProofVerificationRequest(request, response);

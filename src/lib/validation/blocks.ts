@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { PublicBlockRecord } from "../../types/persistence.js";
+import { publicAnchorRecordResponseSchema } from "./anchors.js";
 import { sha256HexSchema } from "./hash.js";
 
 export const createBlockRequestSchema = z
@@ -17,7 +18,8 @@ export const createBlockResponseSchema = z.object({
   signature: z.string().min(1),
   algorithm: z.literal("Ed25519"),
   key_id: z.string().min(1),
-  sealed_at: z.string().datetime()
+  sealed_at: z.string().datetime(),
+  anchor: publicAnchorRecordResponseSchema.nullable()
 });
 
 export const listBlocksQuerySchema = z.object({
@@ -37,17 +39,18 @@ export const blockRecordResponseSchema = z.object({
   created_at: z.string().datetime()
 });
 
-export const publicBlockRecordResponseSchema: z.ZodType<PublicBlockRecord> = z.object({
-  block_id: z.string().regex(/^blk_[a-zA-Z0-9_-]+$/),
-  sequence: z.number().int().positive(),
-  event_count: z.number().int().nonnegative(),
-  merkle_root: sha256HexSchema,
-  signature: z.string().min(1),
-  algorithm: z.literal("Ed25519"),
-  key_id: z.string().min(1),
-  sealed_at: z.string().datetime(),
-  created_at: z.string().datetime()
-});
+export const publicBlockRecordResponseSchema: z.ZodType<PublicBlockRecord> =
+  z.object({
+    block_id: z.string().regex(/^blk_[a-zA-Z0-9_-]+$/),
+    sequence: z.number().int().positive(),
+    event_count: z.number().int().nonnegative(),
+    merkle_root: sha256HexSchema,
+    signature: z.string().min(1),
+    algorithm: z.literal("Ed25519"),
+    key_id: z.string().min(1),
+    sealed_at: z.string().datetime(),
+    created_at: z.string().datetime()
+  });
 
 export const publicListBlocksResponseSchema = z.object({
   blocks: z.array(publicBlockRecordResponseSchema),

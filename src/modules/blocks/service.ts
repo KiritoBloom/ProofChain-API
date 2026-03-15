@@ -4,7 +4,13 @@ import { signEd25519 } from "../../lib/crypto/ed25519.js";
 import { serializeSignedBlockPayload } from "../../lib/crypto/signed-block.js";
 import { ConflictError } from "../../lib/http/errors.js";
 import { buildMerkleTree } from "../../lib/merkle/tree.js";
-import type { BlockRecord, BlockRepository, EventRecord, EventRepository } from "../../types/persistence.js";
+import type {
+  AnchorRecord,
+  BlockRecord,
+  BlockRepository,
+  EventRecord,
+  EventRepository
+} from "../../types/persistence.js";
 
 const DEFAULT_BLOCK_SEAL_MAX_EVENTS = 100;
 
@@ -21,6 +27,7 @@ export interface SealBlockResult {
   algorithm: "Ed25519";
   key_id: string;
   sealed_at: string;
+  anchor: AnchorRecord | null;
 }
 
 interface BlockSealingDependencies {
@@ -31,22 +38,34 @@ interface BlockSealingDependencies {
   signBlockPayload: (payload: string) => string;
   signingKeyId: string;
   maxEventsPerSeal?: number;
+  anchorBlock?: (block: BlockRecord) => Promise<AnchorRecord>;
 }
 
-export function createBlockSealingService(dependencies: BlockSealingDependencies) {
-  return async function sealBlock(input: SealBlockInput = {}): Promise<SealBlockResult> {
-    const maxEvents = input.max_events ?? dependencies.maxEventsPerSeal ?? DEFAULT_BLOCK_SEAL_MAX_EVENTS;
-    const candidateEvents = await dependencies.eventRepository.listUnsealedEvents(maxEvents);
+export function createBlockSealingService(
+  dependencies: BlockSealingDependencies
+) {
+  return async function sealBlock(
+    input: SealBlockInput = {}
+  ): Promise<SealBlockResult> {
+    const maxEvents =
+      input.max_events ??
+      dependencies.maxEventsPerSeal ??
+      DEFAULT_BLOCK_SEAL_MAX_EVENTS;
+    const candidateEvents =
+      await dependencies.eventRepository.listUnsealedEvents(maxEvents);
 
     if (candidateEvents.length === 0) {
-      throw new ConflictError("No unsealed events are available for block creation.");
+      throw new ConflictError(
+        "No unsealed events are available for block creation."
+      );
     }
 
     const orderedEvents = sortEventsForSealing(candidateEvents);
     const event_ids = orderedEvents.map((event) => event.event_id);
     const hashes = orderedEvents.map((event) => event.hash);
     const merkleTree = buildMerkleTree(hashes);
-    const latestSequence = await dependencies.blockRepository.getLatestBlockSequence();
+    const latestSequence =
+      await dependencies.blockRepository.getLatestBlockSequence();
     const sequence = (latestSequence ?? 0) + 1;
     const sealed_at = (dependencies.now ?? defaultNow)();
     const block_id = (dependencies.createBlockId ?? defaultBlockId)(sequence);
@@ -72,11 +91,20 @@ export function createBlockSealingService(dependencies: BlockSealingDependencies
 
     await dependencies.blockRepository.createBlock(blockRecord);
 
-    const modifiedCount = await dependencies.eventRepository.markEventsSealed(event_ids, block_id);
+    const modifiedCount = await dependencies.eventRepository.markEventsSealed(
+      event_ids,
+      block_id
+    );
 
     if (modifiedCount !== event_ids.length) {
-      throw new ConflictError("Failed to seal every selected event into the new block.");
+      throw new ConflictError(
+        "Failed to seal every selected event into the new block."
+      );
     }
+
+    const anchor = dependencies.anchorBlock
+      ? await dependencies.anchorBlock(blockRecord)
+      : null;
 
     return {
       block_id,
@@ -86,12 +114,15 @@ export function createBlockSealingService(dependencies: BlockSealingDependencies
       signature,
       algorithm: "Ed25519",
       key_id: dependencies.signingKeyId,
-      sealed_at
+      sealed_at,
+      anchor
     };
   };
 }
 
-export function createEd25519BlockSigner(privateKeyPem: string): (payload: string) => string {
+export function createEd25519BlockSigner(
+  privateKeyPem: string
+): (payload: string) => string {
   return (payload: string) => signEd25519(payload, privateKeyPem);
 }
 

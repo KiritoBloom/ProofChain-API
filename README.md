@@ -2,7 +2,7 @@
 
 ProofChain API is a tamper-evident audit logging backend for verifiable event integrity.
 
-It accepts events, hashes them deterministically, seals them into signed Merkle blocks, and returns proofs that can be verified independently by external clients.
+It accepts events, hashes them deterministically, seals them into signed Merkle blocks, chains public transparency anchors over those blocks, and returns proofs that can be verified independently by external clients.
 
 ## What It Does
 
@@ -22,6 +22,7 @@ Core guarantees:
 - event hashes are deterministic
 - block membership is proven with Merkle proofs
 - block roots are signed with Ed25519
+- sealed blocks can be chained into transparency checkpoints
 - proofs can be verified without hidden server state
 
 ## Features
@@ -31,6 +32,8 @@ Core guarantees:
 - `GET /api/events/:event_id` fetch stored event metadata, with full payload access behind a bearer token
 - `POST /api/blocks/create` seal pending events into signed blocks with a bearer token
 - `GET /api/blocks` browse sealed block history
+- `GET /api/anchors` browse transparency anchor history
+- `GET /api/anchors/:block_id` fetch the transparency anchor for a sealed block
 - `GET /api/proof/:event_id` fetch a proof envelope for a sealed event
 - `POST /api/verify` verify a proof envelope with a public key
 - `GET /api/keys/current` publish current verification key metadata
@@ -109,6 +112,7 @@ Application:
 - `CRON_SECRET` optional but recommended for scheduled block sealing
 - `BLOCK_SEAL_TOKEN` required for manual `POST /api/blocks/create`
 - `EVENT_READ_TOKEN` required to read full event payloads from `GET /api/events/:event_id`
+- `TRANSPARENCY_AUTO_ANCHOR` optional, defaults to `true`, disables automatic anchor creation only if set to `false`
 
 Database:
 
@@ -158,9 +162,19 @@ Request:
 
 Returns a versioned proof envelope for a sealed event.
 
+When a block has been transparency-anchored, the response also includes the chained anchor record.
+
 ### `POST /api/verify`
 
 Verifies a proof envelope against a public key.
+
+### `GET /api/anchors`
+
+Returns the public transparency checkpoint chain for sealed blocks.
+
+### `GET /api/anchors/:block_id`
+
+Returns the transparency anchor for a specific block.
 
 ### `GET /api/keys/current`
 
@@ -192,6 +206,7 @@ proofchain verify proof.json --public-key "-----BEGIN PUBLIC KEY-----..."
 - `npm run demo` run the core integrity demo
 - `npm run demo:events` run event API demo
 - `npm run demo:blocks` run block sealing demo
+- `npm run demo:anchors` run transparency anchor demo
 - `npm run demo:proof` run proof retrieval and verification demo
 - `npm run demo:ledger` run public ledger demo
 - `npm run demo:cli` run CLI verifier demo
@@ -203,9 +218,10 @@ Typical flow after deployment:
 
 1. client systems send events to `POST /api/events`
 2. scheduled or manual sealing creates signed blocks via `POST /api/blocks/create`
-3. proofs are fetched with `GET /api/proof/:event_id`
-4. proofs are verified with `POST /api/verify` or the CLI
-5. operators inspect block history with `GET /api/blocks`
+3. operators can inspect chained checkpoints with `GET /api/anchors` or `GET /api/anchors/:block_id`
+4. proofs are fetched with `GET /api/proof/:event_id`
+5. proofs are verified with `POST /api/verify` or the CLI
+6. operators inspect block history with `GET /api/blocks`
 
 ## Security Notes
 
@@ -217,6 +233,7 @@ Typical flow after deployment:
 - protect scheduled sealing with `CRON_SECRET`
 - protect manual block sealing with `BLOCK_SEAL_TOKEN`
 - treat `EVENT_READ_TOKEN` like a secret because it unlocks stored event payloads
+- keep `TRANSPARENCY_AUTO_ANCHOR=true` in production unless you have an explicit operational reason to defer anchors
 
 ## Testing
 
@@ -230,6 +247,7 @@ The test suite covers:
 - event API behavior
 - block sealing behavior
 - proof retrieval and verification
+- transparency anchor creation and retrieval
 - request hardening and structured logging
 - CLI verification and proof export
 

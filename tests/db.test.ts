@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { MongoAnchorRepository } from "../src/lib/db/anchor-repository.js";
 import { MongoBlockRepository } from "../src/lib/db/block-repository.js";
 import { MongoEventRepository } from "../src/lib/db/event-repository.js";
 import { ensureProofChainIndexes } from "../src/lib/db/indexes.js";
 import { getMongoDbName, getMongoUri } from "../src/lib/db/mongo.js";
-import type { BlockRecord, EventRecord } from "../src/types/persistence.js";
+import type {
+  AnchorRecord,
+  BlockRecord,
+  EventRecord
+} from "../src/types/persistence.js";
 
 class InMemoryCollection<T extends object> {
   private documents: T[] = [];
@@ -13,8 +18,13 @@ class InMemoryCollection<T extends object> {
     this.documents.push(structuredClone(document));
   }
 
-  async findOne(filter: Record<string, unknown>, options?: { sort?: Record<string, 1 | -1> }): Promise<T | null> {
-    const matches = this.documents.filter((document) => matchesFilter(document, filter));
+  async findOne(
+    filter: Record<string, unknown>,
+    options?: { sort?: Record<string, 1 | -1> }
+  ): Promise<T | null> {
+    const matches = this.documents.filter((document) =>
+      matchesFilter(document, filter)
+    );
 
     if (matches.length === 0) {
       return null;
@@ -34,7 +44,9 @@ class InMemoryCollection<T extends object> {
   }
 
   find(filter: Record<string, unknown>) {
-    const matches = this.documents.filter((document) => matchesFilter(document, filter));
+    const matches = this.documents.filter((document) =>
+      matchesFilter(document, filter)
+    );
 
     return new InMemoryCursor<T>(matches);
   }
@@ -57,7 +69,13 @@ class InMemoryCollection<T extends object> {
     return { modifiedCount };
   }
 
-  async createIndexes(indexes: Array<{ name?: string; key: Record<string, 1 | -1>; unique?: boolean }>): Promise<string[]> {
+  async createIndexes(
+    indexes: Array<{
+      name?: string;
+      key: Record<string, 1 | -1>;
+      unique?: boolean;
+    }>
+  ): Promise<string[]> {
     return indexes.map((index) => index.name ?? JSON.stringify(index.key));
   }
 }
@@ -139,12 +157,30 @@ const blockRecord: BlockRecord = {
   sequence: 1,
   event_ids: ["evt_001", "evt_002"],
   hashes: [firstEvent.hash, secondEvent.hash],
-  merkle_root: "19401b0f6e27eb4e327a9bc2fe6fd00da9c0beaa72333b576bbb5be041bb9286",
+  merkle_root:
+    "19401b0f6e27eb4e327a9bc2fe6fd00da9c0beaa72333b576bbb5be041bb9286",
   signature: "demo-signature",
   algorithm: "Ed25519",
   key_id: "main-2026-01",
   sealed_at: "2026-03-12T00:02:00.000Z",
   created_at: "2026-03-12T00:02:00.000Z"
+};
+
+const anchorRecord: AnchorRecord = {
+  schema_version: 1,
+  anchor_id: "anc_000001_test",
+  block_id: "blk_001",
+  block_sequence: 1,
+  merkle_root: blockRecord.merkle_root,
+  signature: blockRecord.signature,
+  algorithm: "Ed25519",
+  key_id: blockRecord.key_id,
+  sealed_at: blockRecord.sealed_at,
+  prev_anchor_hash: null,
+  checkpoint:
+    "b4e3665117032d4b67d2d0f15710ca2f7925745f5675c4600af6684b87f0d793",
+  anchored_at: "2026-03-12T00:03:00.000Z",
+  created_at: "2026-03-12T00:03:00.000Z"
 };
 
 describe("persistence layer", () => {
@@ -155,6 +191,7 @@ describe("persistence layer", () => {
         APP_NAME: "ProofChain API",
         API_BASE_URL: "http://localhost:3000",
         LOG_LEVEL: "info",
+        TRANSPARENCY_AUTO_ANCHOR: "true",
         MONGODB_URI: undefined,
         MONGODB_DB_NAME: "proofchain",
         SIGNING_PRIVATE_KEY: undefined,
@@ -168,6 +205,7 @@ describe("persistence layer", () => {
         APP_NAME: "ProofChain API",
         API_BASE_URL: "http://localhost:3000",
         LOG_LEVEL: "info",
+        TRANSPARENCY_AUTO_ANCHOR: "true",
         MONGODB_URI: "mongodb+srv://demo/proofchain",
         MONGODB_DB_NAME: undefined,
         SIGNING_PRIVATE_KEY: undefined,
@@ -185,10 +223,16 @@ describe("persistence layer", () => {
     await repository.createEvent(firstEvent);
 
     expect(await repository.getEventById("evt_001")).toEqual(firstEvent);
-    expect(await repository.listUnsealedEvents(10)).toEqual([firstEvent, secondEvent]);
+    expect(await repository.listUnsealedEvents(10)).toEqual([
+      firstEvent,
+      secondEvent
+    ]);
     expect(await repository.getEventsByBlockId("blk_001")).toEqual([]);
 
-    const modifiedCount = await repository.markEventsSealed(["evt_001", "evt_002"], "blk_001");
+    const modifiedCount = await repository.markEventsSealed(
+      ["evt_001", "evt_002"],
+      "blk_001"
+    );
 
     expect(modifiedCount).toBe(2);
     expect(await repository.listUnsealedEvents(10)).toEqual([]);
@@ -232,6 +276,19 @@ describe("persistence layer", () => {
     expect(await repository.getLatestBlockSequence()).toBe(2);
   });
 
+  it("creates and queries anchors through the anchor repository", async () => {
+    const db = new InMemoryDb();
+    const repository = MongoAnchorRepository.fromDb(db);
+
+    await repository.createAnchor(anchorRecord);
+
+    expect(await repository.getAnchorByBlockId("blk_001")).toEqual(
+      anchorRecord
+    );
+    expect(await repository.getLatestAnchor()).toEqual(anchorRecord);
+    expect(await repository.listAnchors(10)).toEqual([anchorRecord]);
+  });
+
   it("creates the expected index definitions", async () => {
     const db = new InMemoryDb();
 
@@ -239,10 +296,14 @@ describe("persistence layer", () => {
 
     expect(db.collections.has("events")).toBe(true);
     expect(db.collections.has("blocks")).toBe(true);
+    expect(db.collections.has("anchors")).toBe(true);
   });
 });
 
-function matchesFilter(document: object, filter: Record<string, unknown>): boolean {
+function matchesFilter(
+  document: object,
+  filter: Record<string, unknown>
+): boolean {
   const record = document as Record<string, unknown>;
 
   for (const [key, value] of Object.entries(filter)) {
@@ -265,7 +326,12 @@ function matchesFilter(document: object, filter: Record<string, unknown>): boole
 }
 
 function isInClause(value: unknown): value is { $in: unknown[] } {
-  return typeof value === "object" && value !== null && "$in" in value && Array.isArray(value.$in);
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "$in" in value &&
+    Array.isArray(value.$in)
+  );
 }
 
 function compareValues(left: unknown, right: unknown): number {

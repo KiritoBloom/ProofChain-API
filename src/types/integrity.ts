@@ -4,7 +4,10 @@ export type CanonicalJsonObject = {
   [key: string]: CanonicalJsonValue;
 };
 
-export type CanonicalJsonValue = CanonicalJsonPrimitive | CanonicalJsonObject | CanonicalJsonValue[];
+export type CanonicalJsonValue =
+  | CanonicalJsonPrimitive
+  | CanonicalJsonObject
+  | CanonicalJsonValue[];
 
 export type MerkleProofPosition = "left" | "right";
 
@@ -28,6 +31,22 @@ export interface SignedBlockPayload {
   sealed_at: string;
 }
 
+export interface TransparencyAnchor {
+  schema_version: 1;
+  anchor_id: string;
+  block_id: string;
+  block_sequence: number;
+  merkle_root: string;
+  signature: string;
+  algorithm: "Ed25519";
+  key_id: string;
+  sealed_at: string;
+  prev_anchor_hash: string | null;
+  checkpoint: string;
+  anchored_at: string;
+  created_at: string;
+}
+
 export interface ProofEnvelope {
   schema_version: 1;
   event_id: string;
@@ -39,4 +58,5 @@ export interface ProofEnvelope {
   signature: string;
   sealed_at: string;
   proof: MerkleProofStep[];
+  anchor?: TransparencyAnchor;
 }

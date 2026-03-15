@@ -13,6 +13,7 @@
   "scripts": {
     "check:env": "tsx scripts/check-env.ts",
     "demo": "tsx scripts/demo.ts",
+    "demo:anchors": "tsx scripts/demo-anchors.ts",
     "demo:blocks": "tsx scripts/demo-blocks.ts",
     "demo:cli": "tsx scripts/demo-cli-verifier.ts",
     "demo:events": "tsx scripts/demo-events.ts",

@@ -23,7 +23,8 @@ async function main(): Promise<void> {
   }
 
   const publicKeyFlagIndex = args.findIndex((arg) => arg === "--public-key");
-  const publicKey = publicKeyFlagIndex >= 0 ? args[publicKeyFlagIndex + 1] : undefined;
+  const publicKey =
+    publicKeyFlagIndex >= 0 ? args[publicKeyFlagIndex + 1] : undefined;
   const result = await verifyProofFile({
     proofFilePath: resolve(proofFilePath),
     publicKey
@@ -33,6 +34,16 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         valid: result.valid,
+        ...(typeof result.anchorValid === "boolean"
+          ? {
+              anchor_valid: result.anchorValid
+            }
+          : {}),
+        ...(result.proof.anchor
+          ? {
+              anchor_checkpoint: result.proof.anchor.checkpoint
+            }
+          : {}),
         event_id: result.proof.event_id,
         block_id: result.proof.block_id,
         merkle_root: result.proof.merkle_root
@@ -48,7 +59,9 @@ async function main(): Promise<void> {
 }
 
 function printUsage(): void {
-  console.log("Usage: proofchain verify <proof-file.json> [--public-key <PEM>]");
+  console.log(
+    "Usage: proofchain verify <proof-file.json> [--public-key <PEM>]"
+  );
 }
 
 main().catch((error: unknown) => {

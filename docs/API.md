@@ -6,6 +6,7 @@ This document describes the current ProofChain API surface.
 
 - events are ingested and hashed from a canonical immutable envelope
 - sealed blocks contain ordered event hashes and a signed Merkle root
+- transparency anchors chain sealed blocks into append-only public checkpoints
 - proofs contain enough metadata for independent verification
 
 ## Endpoints
@@ -29,7 +30,8 @@ Response `200`:
     "event ingestion",
     "block sealing",
     "Merkle proofs",
-    "Ed25519 verification"
+    "Ed25519 verification",
+    "transparency anchoring"
   ],
   "routes": [
     {
@@ -41,6 +43,51 @@ Response `200`:
       "method": "GET",
       "path": "/health",
       "description": "Health check"
+    },
+    {
+      "method": "POST",
+      "path": "/events",
+      "description": "Ingest an event"
+    },
+    {
+      "method": "GET",
+      "path": "/events/:event_id",
+      "description": "Fetch a stored event"
+    },
+    {
+      "method": "POST",
+      "path": "/blocks/create",
+      "description": "Seal pending events into a block"
+    },
+    {
+      "method": "GET",
+      "path": "/blocks",
+      "description": "List sealed blocks"
+    },
+    {
+      "method": "GET",
+      "path": "/anchors",
+      "description": "List transparency anchors"
+    },
+    {
+      "method": "GET",
+      "path": "/anchors/:block_id",
+      "description": "Fetch a block transparency anchor"
+    },
+    {
+      "method": "GET",
+      "path": "/proof/:event_id",
+      "description": "Fetch a proof envelope"
+    },
+    {
+      "method": "POST",
+      "path": "/verify",
+      "description": "Verify a proof envelope"
+    },
+    {
+      "method": "GET",
+      "path": "/keys/current",
+      "description": "Fetch the current verification key"
     }
   ],
   "docs": {
@@ -143,13 +190,63 @@ Response `201`:
   "signature": "...",
   "algorithm": "Ed25519",
   "key_id": "main-2026-01",
-  "sealed_at": "..."
+  "sealed_at": "...",
+  "anchor": {
+    "schema_version": 1,
+    "anchor_id": "anc_...",
+    "block_id": "blk_...",
+    "block_sequence": 1,
+    "merkle_root": "...",
+    "signature": "...",
+    "algorithm": "Ed25519",
+    "key_id": "main-2026-01",
+    "sealed_at": "...",
+    "prev_anchor_hash": null,
+    "checkpoint": "...",
+    "anchored_at": "...",
+    "created_at": "..."
+  }
 }
 ```
 
 Scheduled compatibility:
 
 - `GET /blocks/create` is reserved for Vercel Cron-style requests only
+
+When `TRANSPARENCY_AUTO_ANCHOR=true`, block sealing also writes a chained transparency anchor for the new block.
+
+### `GET /anchors`
+
+List transparency anchors in descending block-sequence order.
+
+Response `200`:
+
+```json
+{
+  "count": 2,
+  "anchors": [
+    {
+      "schema_version": 1,
+      "anchor_id": "anc_...",
+      "block_id": "blk_...",
+      "block_sequence": 2,
+      "merkle_root": "...",
+      "signature": "...",
+      "algorithm": "Ed25519",
+      "key_id": "main-2026-01",
+      "sealed_at": "...",
+      "prev_anchor_hash": "...",
+      "checkpoint": "...",
+      "anchored_at": "...",
+      "created_at": "..."
+    }
+  ]
+}
+```
+
+### `GET /anchors/:block_id`
+
+Return the transparency anchor for a specific block.
 
 ### `GET /proof/:event_id`
 
@@ -177,7 +274,22 @@ Response `200`:
       "position": "left",
       "hash": "..."
     }
-  ]
+  ],
+  "anchor": {
+    "schema_version": 1,
+    "anchor_id": "anc_...",
+    "block_id": "blk_...",
+    "block_sequence": 1,
+    "merkle_root": "...",
+    "signature": "...",
+    "algorithm": "Ed25519",
+    "key_id": "main-2026-01",
+    "sealed_at": "...",
+    "prev_anchor_hash": null,
+    "checkpoint": "...",
+    "anchored_at": "...",
+    "created_at": "..."
+  }
 }
 ```
 
@@ -212,7 +324,8 @@ Response `200`:
 
 ```json
 {
-  "valid": true
+  "valid": true,
+  "anchor_valid": true
 }
 ```
 
@@ -262,4 +375,4 @@ Common errors:
 - JSON content-type required for `POST` routes
 - content-length checked before large body reads
 - request body size limits applied
-- rate limiting applied to ingestion, sealing, proof retrieval, event reads, and verification routes
+- rate limiting applied to ingestion, sealing, anchor retrieval, proof retrieval, event reads, and verification routes

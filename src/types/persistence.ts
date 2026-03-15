@@ -1,4 +1,4 @@
-import type { CanonicalJsonObject } from "./integrity.js";
+import type { CanonicalJsonObject, TransparencyAnchor } from "./integrity.js";
 
 export interface EventRecord {
   event_id: string;
@@ -51,9 +51,15 @@ export interface PublicBlockRecord {
   created_at: string;
 }
 
+export type AnchorRecord = TransparencyAnchor;
+
+export type PublicAnchorRecord = TransparencyAnchor;
+
 export type CreateEventRecordInput = EventRecord;
 
 export type CreateBlockRecordInput = BlockRecord;
+
+export type CreateAnchorRecordInput = AnchorRecord;
 
 export interface EventRepository {
   createEvent(record: CreateEventRecordInput): Promise<EventRecord>;
@@ -68,4 +74,11 @@ export interface BlockRepository {
   getBlockById(blockId: string): Promise<BlockRecord | null>;
   getLatestBlockSequence(): Promise<number | null>;
   listBlocks(limit: number): Promise<BlockRecord[]>;
+}
+
+export interface AnchorRepository {
+  createAnchor(record: CreateAnchorRecordInput): Promise<AnchorRecord>;
+  getAnchorByBlockId(blockId: string): Promise<AnchorRecord | null>;
+  getLatestAnchor(): Promise<AnchorRecord | null>;
+  listAnchors(limit: number): Promise<AnchorRecord[]>;
 }
