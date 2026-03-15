@@ -278,6 +278,10 @@ See:
 - `docs/DEPLOYMENT.md`
 - `docs/API.md`
 
+## License
+
+This project is licensed under the Apache License 2.0. See `LICENSE`.
+
 ## Maintainer Notes
 
 If you are maintaining the project, start here:
