@@ -13,10 +13,15 @@ This document describes the current ProofChain API surface.
 
 ### `GET /`
 
+Return the public landing page for the deployment base URL.
+
+This page is intended for human visitors. It showcases the API, explains the integrity model, renders a route catalog, and includes a lightweight in-browser request playground.
+
+### `GET /api`
+
 Return API metadata and route discovery information.
 
-When deployed from the Vercel `api/` directory, this handler is exposed at `/api`.
-The route paths returned in the payload are relative to the API mount.
+This is the machine-readable index that powers the landing page and should be used by tooling or external clients that need endpoint discovery.
 
 Response `200`:
 
@@ -26,6 +31,12 @@ Response `200`:
   "product": "ProofChain API",
   "status": "api-ready",
   "phase": "Complete",
+  "base_url": "https://proof-chain-api.vercel.app",
+  "landing": {
+    "path": "/",
+    "description": "Interactive portfolio landing page and API showcase"
+  },
+  "api_base_path": "/api",
   "capabilities": [
     "event ingestion",
     "block sealing",
@@ -36,58 +47,102 @@ Response `200`:
   "routes": [
     {
       "method": "GET",
-      "path": "/",
-      "description": "API index"
+      "path": "/api",
+      "description": "Machine-readable API index",
+      "auth": "none",
+      "category": "discovery"
     },
     {
       "method": "GET",
-      "path": "/health",
-      "description": "Health check"
+      "path": "/api/health",
+      "description": "Health check",
+      "auth": "none",
+      "category": "ops"
     },
     {
       "method": "POST",
-      "path": "/events",
-      "description": "Ingest an event"
+      "path": "/api/events",
+      "description": "Ingest an immutable event envelope",
+      "auth": "none",
+      "category": "events"
     },
     {
       "method": "GET",
-      "path": "/events/:event_id",
-      "description": "Fetch a stored event"
+      "path": "/api/events/:event_id",
+      "description": "Fetch stored event metadata or the full payload",
+      "auth": "optional bearer EVENT_READ_TOKEN for full payload",
+      "category": "events"
     },
     {
       "method": "POST",
-      "path": "/blocks/create",
-      "description": "Seal pending events into a block"
+      "path": "/api/blocks/create",
+      "description": "Seal pending events into a signed block",
+      "auth": "bearer BLOCK_SEAL_TOKEN or Vercel Cron",
+      "category": "blocks"
     },
     {
       "method": "GET",
-      "path": "/blocks",
-      "description": "List sealed blocks"
+      "path": "/api/blocks",
+      "description": "List sealed blocks",
+      "auth": "none",
+      "category": "blocks"
     },
     {
       "method": "GET",
-      "path": "/anchors",
-      "description": "List transparency anchors"
+      "path": "/api/anchors",
+      "description": "List transparency anchors",
+      "auth": "none",
+      "category": "anchors"
     },
     {
       "method": "GET",
-      "path": "/anchors/:block_id",
-      "description": "Fetch a block transparency anchor"
+      "path": "/api/anchors/:block_id",
+      "description": "Fetch a block transparency anchor",
+      "auth": "none",
+      "category": "anchors"
     },
     {
       "method": "GET",
-      "path": "/proof/:event_id",
-      "description": "Fetch a proof envelope"
+      "path": "/api/proof/:event_id",
+      "description": "Fetch a proof envelope",
+      "auth": "none",
+      "category": "proofs"
     },
     {
       "method": "POST",
-      "path": "/verify",
-      "description": "Verify a proof envelope"
+      "path": "/api/verify",
+      "description": "Verify a proof envelope",
+      "auth": "none",
+      "category": "proofs"
     },
     {
       "method": "GET",
-      "path": "/keys/current",
-      "description": "Fetch the current verification key"
+      "path": "/api/keys/current",
+      "description": "Fetch the current verification key",
+      "auth": "none",
+      "category": "keys"
+    }
+  ],
+  "quickstart": [
+    {
+      "label": "Inspect live API metadata",
+      "method": "GET",
+      "path": "/api"
+    },
+    {
+      "label": "Confirm deployment health",
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "label": "Ingest a sample event",
+      "method": "POST",
+      "path": "/api/events"
+    },
+    {
+      "label": "Verify an exported proof",
+      "method": "POST",
+      "path": "/api/verify"
     }
   ],
   "docs": {
@@ -98,7 +153,7 @@ Response `200`:
 }
 ```
 
-### `POST /events`
+### `POST /api/events`
 
 Ingest a new event.
 
@@ -125,7 +180,7 @@ Response `201`:
 }
 ```
 
-### `GET /events/:event_id`
+### `GET /api/events/:event_id`
 
 Fetch a stored event record.
 
@@ -165,7 +220,7 @@ Authenticated response `200`:
 }
 ```
 
-### `POST /blocks/create`
+### `POST /api/blocks/create`
 
 Seal unsealed events into a signed block.
 
@@ -211,11 +266,11 @@ Response `201`:
 
 Scheduled compatibility:
 
-- `GET /blocks/create` is reserved for Vercel Cron-style requests only
+- `GET /api/blocks/create` is reserved for Vercel Cron-style requests only
 
 When `TRANSPARENCY_AUTO_ANCHOR=true`, block sealing also writes a chained transparency anchor for the new block.
 
-### `GET /anchors`
+### `GET /api/anchors`
 
 List transparency anchors in descending block-sequence order.
 
@@ -244,11 +299,11 @@ Response `200`:
 }
 ```
 
-### `GET /anchors/:block_id`
+### `GET /api/anchors/:block_id`
 
 Return the transparency anchor for a specific block.
 
-### `GET /proof/:event_id`
+### `GET /api/proof/:event_id`
 
 Retrieve a proof envelope for a sealed event.
 
@@ -293,7 +348,7 @@ Response `200`:
 }
 ```
 
-### `POST /verify`
+### `POST /api/verify`
 
 Verify a proof envelope with a public key.
 
@@ -329,7 +384,7 @@ Response `200`:
 }
 ```
 
-### `GET /keys/current`
+### `GET /api/keys/current`
 
 Return the currently published verification key metadata.
 

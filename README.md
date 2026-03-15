@@ -27,6 +27,7 @@ Core guarantees:
 
 ## Features
 
+- root deployment landing page with a polished API showcase, live request playground, and portfolio-ready explanations
 - `GET /api` discover live API status, capabilities, and route metadata
 - `POST /api/events` ingest events
 - `GET /api/events/:event_id` fetch stored event metadata, with full payload access behind a bearer token
@@ -126,6 +127,12 @@ Signing:
 - `SIGNING_KEY_ID`
 
 ## Primary Endpoints
+
+### `GET /`
+
+Returns the portfolio landing page for the deployed base URL.
+
+It presents the API visually, explains the integrity workflow, loads the live route catalog from `GET /api`, and includes a browser-based request playground for public endpoints.
 
 ### `GET /api`
 
@@ -260,6 +267,11 @@ npm run verify
 ## Deployment
 
 Deploy on Vercel with MongoDB Atlas.
+
+The project now exposes two complementary entry points on a deployed base URL:
+
+- `/` human-friendly showcase and interactive API landing page
+- `/api` machine-readable API index for tooling and route discovery
 
 See:
 

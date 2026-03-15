@@ -38,6 +38,11 @@ Signing:
 3. Ensure the project uses Node.js 20+.
 4. Deploy the main branch.
 
+After deployment:
+
+- `/` should render the public showcase landing page
+- `/api` should return the machine-readable JSON index
+
 ## MongoDB Atlas Setup
 
 1. Create a free cluster.
@@ -72,13 +77,15 @@ If `CRON_SECRET` is configured, require it on scheduled block creation requests 
 
 Run these checks after deployment:
 
-1. ingest a sample event through `POST /events`
-2. fetch it through `GET /events/:event_id` and confirm redacted metadata is returned without `EVENT_READ_TOKEN`
-3. fetch it again with `Authorization: Bearer <EVENT_READ_TOKEN>` and confirm the full payload is returned
-4. seal a block through `POST /blocks/create` with `Authorization: Bearer <BLOCK_SEAL_TOKEN>` or cron
-5. fetch the resulting anchor through `GET /anchors/:block_id`
-6. fetch proof through `GET /proof/:event_id`
-7. verify it through `POST /verify` and confirm `anchor_valid` is returned when an anchor is present
+1. load `/` and confirm the public API showcase renders instead of a 404
+2. fetch `/api` and confirm the JSON index returns route metadata and examples
+3. ingest a sample event through `POST /api/events`
+4. fetch it through `GET /api/events/:event_id` and confirm redacted metadata is returned without `EVENT_READ_TOKEN`
+5. fetch it again with `Authorization: Bearer <EVENT_READ_TOKEN>` and confirm the full payload is returned
+6. seal a block through `POST /api/blocks/create` with `Authorization: Bearer <BLOCK_SEAL_TOKEN>` or cron
+7. fetch the resulting anchor through `GET /api/anchors/:block_id`
+8. fetch proof through `GET /api/proof/:event_id`
+9. verify it through `POST /api/verify` and confirm `anchor_valid` is returned when an anchor is present
 
 ## Operational Notes
 

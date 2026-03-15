@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProofChain API</title>
+    <meta
+      name="description"
+      content="ProofChain API portfolio landing page with live endpoint discovery, request playground, and integrity workflow showcase."
+    />
+    <style>
+      :root {
+        --bg: #07111a;
+        --panel: rgba(10, 25, 38, 0.9);
+        --panel-strong: rgba(8, 18, 28, 0.96);
+        --line: rgba(109, 168, 212, 0.24);
+        --line-strong: rgba(109, 168, 212, 0.5);
+        --text: #edf6fb;
+        --muted: #97b6c8;
+        --accent: #79e0c5;
+        --accent-strong: #c9ff73;
+        --warning: #ffd58a;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        --radius: 22px;
+        --mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+        --sans: "Segoe UI", "Helvetica Neue", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--sans);
+        color: var(--text);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(121, 224, 197, 0.18),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(201, 255, 115, 0.12),
+            transparent 26%
+          ),
+          linear-gradient(180deg, #08131d 0%, #07111a 55%, #050b12 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(121, 224, 197, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(121, 224, 197, 0.05) 1px, transparent 1px);
+        background-size: 36px 36px;
+        mask-image: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.5),
+          transparent 95%
+        );
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .shell {
+        width: min(1220px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 24px 0 56px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 18px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(7, 17, 26, 0.72);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 18px;
+        z-index: 5;
+      }
+
+      .brand,
+      .nav,
+      .statusline,
+      .stat-grid,
+      .hero-grid,
+      .playground-grid,
+      .endpoint-grid,
+      .workflow,
+      .footer-links {
+        display: flex;
+        gap: 14px;
+      }
+
+      .brand,
+      .statusline,
+      .hero-copy,
+      .terminal,
+      .card,
+      .panel,
+      .endpoint,
+      .workflow-step,
+      .response-box {
+        position: relative;
+      }
+
+      .brand {
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 0.93rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .brand-mark {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          var(--accent),
+          var(--accent-strong)
+        );
+        box-shadow: 0 0 18px rgba(121, 224, 197, 0.7);
+      }
+
+      .nav {
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .nav a,
+      button,
+      select {
+        transition: 160ms ease;
+      }
+
+      .nav a {
+        padding: 8px 12px;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .nav a:hover,
+      .nav a:focus-visible {
+        color: var(--text);
+        background: rgba(121, 224, 197, 0.1);
+      }
+
+      .hero-grid,
+      .playground-grid {
+        align-items: stretch;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 24px;
+        padding: 34px 0 18px;
+      }
+
+      .hero-copy,
+      .terminal,
+      .panel,
+      .endpoint,
+      .workflow-step,
+      .card,
+      .response-box {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(
+          180deg,
+          rgba(13, 28, 41, 0.92),
+          rgba(7, 17, 26, 0.95)
+        );
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .hero-copy {
+        padding: 32px;
+      }
+
+      .eyebrow,
+      .chip,
+      .method,
+      .mini-label,
+      .tag {
+        font-family: var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--accent);
+        font-size: 0.78rem;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 34px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      pre {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 18px;
+        font-size: clamp(2.6rem, 7vw, 5.3rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .lead {
+        margin-top: 18px;
+        max-width: 58ch;
+        color: var(--muted);
+        font-size: 1.03rem;
+        line-height: 1.7;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .button,
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 14px;
+        padding: 13px 16px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .button.primary,
+      #send-request {
+        background: linear-gradient(
+          135deg,
+          var(--accent),
+          var(--accent-strong)
+        );
+        color: #041017;
+        font-weight: 700;
+      }
+
+      .button.secondary,
+      #copy-curl {
+        background: rgba(121, 224, 197, 0.08);
+        color: var(--text);
+        border: 1px solid rgba(121, 224, 197, 0.18);
+      }
+
+      .button:hover,
+      .button:focus-visible,
+      button:hover,
+      button:focus-visible {
+        transform: translateY(-1px);
+      }
+
+      .stat-grid {
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+
+      .card {
+        flex: 1 1 180px;
+        min-width: 0;
+        padding: 18px;
+        background: rgba(8, 18, 28, 0.58);
+      }
+
+      .card strong {
+        display: block;
+        font-size: 1.5rem;
+        margin-top: 10px;
+      }
+
+      .mini-label {
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+
+      .terminal {
+        padding: 0;
+      }
+
+      .terminal-header,
+      .panel-header,
+      .response-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .lights {
+        display: flex;
+        gap: 8px;
+      }
+
+      .lights span {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+
+      .lights span:nth-child(1) {
+        background: #ff7b72;
+      }
+
+      .lights span:nth-child(2) {
+        background: #ffd866;
+      }
+
+      .lights span:nth-child(3) {
+        background: #7ee787;
+      }
+
+      .terminal-body,
+      .response-box pre,
+      textarea,
+      input,
+      select,
+      .endpoint code,
+      .inline-code {
+        font-family: var(--mono);
+      }
+
+      .terminal-body {
+        padding: 20px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .terminal-line {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 14px;
+        font-size: 0.93rem;
+        line-height: 1.65;
+      }
+
+      .prompt {
+        color: var(--accent-strong);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .playground {
+        padding-top: 22px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+
+      .section-head p {
+        max-width: 64ch;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .playground-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: 24px;
+      }
+
+      .panel,
+      .response-box {
+        background: linear-gradient(
+          180deg,
+          rgba(8, 18, 28, 0.96),
+          rgba(5, 11, 18, 0.98)
+        );
+      }
+
+      .panel-body,
+      .response-body {
+        padding: 20px;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid rgba(109, 168, 212, 0.28);
+        border-radius: 14px;
+        background: rgba(3, 10, 16, 0.86);
+        color: var(--text);
+        padding: 13px 14px;
+        font-size: 0.95rem;
+      }
+
+      textarea {
+        min-height: 214px;
+        resize: vertical;
+        line-height: 1.55;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 1px solid var(--accent);
+        border-color: var(--accent);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(121, 224, 197, 0.2);
+        color: var(--accent);
+        background: rgba(121, 224, 197, 0.07);
+        font-size: 0.72rem;
+      }
+
+      .response-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .response-box pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #d9edf8;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+
+      .endpoint-grid,
+      .workflow {
+        display: grid;
+        gap: 16px;
+      }
+
+      .endpoint-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 16px;
+      }
+
+      .endpoint,
+      .workflow-step {
+        padding: 20px;
+      }
+
+      .endpoint-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .method {
+        display: inline-flex;
+        min-width: 62px;
+        justify-content: center;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .method.get {
+        background: rgba(121, 224, 197, 0.12);
+        color: var(--accent);
+      }
+
+      .method.post {
+        background: rgba(255, 213, 138, 0.12);
+        color: var(--warning);
+      }
+
+      .endpoint h3,
+      .workflow-step h3 {
+        margin-top: 14px;
+        font-size: 1.05rem;
+      }
+
+      .endpoint p,
+      .workflow-step p,
+      .footer-copy {
+        margin-top: 10px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .endpoint code {
+        display: block;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(2, 8, 13, 0.92);
+        color: #ddf6ff;
+        font-size: 0.88rem;
+      }
+
+      .workflow {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 16px;
+      }
+
+      .workflow-step span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(121, 224, 197, 0.12);
+        color: var(--accent);
+        font-family: var(--mono);
+      }
+
+      footer {
+        margin-top: 30px;
+        padding: 24px 0 8px;
+      }
+
+      .footer-links {
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .footer-links a {
+        color: var(--muted);
+      }
+
+      .footer-links a:hover,
+      .footer-links a:focus-visible {
+        color: var(--text);
+      }
+
+      @media (max-width: 1080px) {
+        .hero-grid,
+        .playground-grid,
+        .endpoint-grid,
+        .workflow {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          width: min(100% - 20px, 1220px);
+          padding-top: 14px;
+        }
+
+        .topbar,
+        .section-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .hero-copy,
+        .terminal,
+        .panel-body,
+        .response-body,
+        .endpoint,
+        .workflow-step {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 2.45rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>ProofChain API</span>
+        </div>
+        <nav class="nav" aria-label="Primary">
+          <a href="#playground">Playground</a>
+          <a href="#endpoints">Endpoints</a>
+          <a href="#workflow">Workflow</a>
+          <a href="/api" target="_blank" rel="noreferrer">JSON Index</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero-grid">
+          <div class="hero-copy">
+            <div class="eyebrow">Tamper-evident audit logging</div>
+            <h1>Interactive API showcase for verifiable integrity.</h1>
+            <p class="lead">
+              ProofChain turns incoming events into deterministic hashes, sealed
+              Merkle blocks, signed proofs, and chained transparency anchors.
+              This landing page doubles as a portfolio piece and a live control
+              surface for the deployed API.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#playground">Try live requests</a>
+              <a
+                class="button secondary"
+                href="/api"
+                target="_blank"
+                rel="noreferrer"
+                >Open machine JSON</a
+              >
+            </div>
+            <div class="stat-grid">
+              <article class="card">
+                <div class="mini-label">Base URL</div>
+                <strong id="base-url">Loading...</strong>
+              </article>
+              <article class="card">
+                <div class="mini-label">Published endpoints</div>
+                <strong id="route-count">--</strong>
+              </article>
+              <article class="card">
+                <div class="mini-label">Verification stack</div>
+                <strong>SHA-256 + Ed25519</strong>
+              </article>
+            </div>
+          </div>
+
+          <aside class="terminal" aria-label="API terminal preview">
+            <div class="terminal-header">
+              <div class="lights" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mini-label">Integrity Terminal</div>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line">
+                <span class="prompt">$</span>
+                <div>
+                  curl
+                  <span class="muted" id="terminal-api-url"
+                    >https://proof-chain-api.vercel.app/api</span
+                  >
+                </div>
+              </div>
+              <div class="terminal-line">
+                <span class="prompt">&gt;</span>
+                <div>{ "status": "api-ready", "phase": "Complete" }</div>
+              </div>
+              <div class="terminal-line">
+                <span class="prompt">$</span>
+                <div>
+                  POST /api/events -> canonical hash -> sealed block -> proof ->
+                  verify
+                </div>
+              </div>
+              <div class="terminal-line">
+                <span class="prompt">&gt;</span>
+                <div class="muted">
+                  Live endpoint discovery loads below, and you can run sample
+                  GET and POST requests directly from the page.
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="playground" id="playground">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Interactive API showcase</div>
+              <h2>Send live requests from the portfolio page.</h2>
+            </div>
+            <p>
+              Choose a prepared request, tweak the path or JSON body, then
+              inspect the live response. Public routes work immediately;
+              protected routes are shown so the API surface is easy to
+              understand.
+            </p>
+          </div>
+
+          <div class="playground-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <strong>Request Builder</strong>
+                <span class="tag">Live against this deployment</span>
+              </div>
+              <div class="panel-body">
+                <form id="request-form">
+                  <div class="field">
+                    <label for="request-preset">Example request</label>
+                    <select id="request-preset" name="request-preset">
+                      <option value="index">GET /api</option>
+                      <option value="health">GET /api/health</option>
+                      <option value="events-post">POST /api/events</option>
+                      <option value="blocks">GET /api/blocks</option>
+                      <option value="anchors">GET /api/anchors</option>
+                      <option value="keys">GET /api/keys/current</option>
+                      <option value="verify-post">POST /api/verify</option>
+                    </select>
+                  </div>
+
+                  <div class="row">
+                    <div class="field">
+                      <label for="request-method">Method</label>
+                      <select id="request-method" name="request-method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="request-path">Path</label>
+                      <input
+                        id="request-path"
+                        name="request-path"
+                        type="text"
+                        value="/api"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label for="request-body">JSON body</label>
+                    <textarea id="request-body" name="request-body">
+{
+  "service": "payment-service",
+  "type": "transaction",
+  "payload": {
+    "user_id": "user_1245",
+    "amount": 200,
+    "currency": "USD"
+  }
+}</textarea
+                    >
+                  </div>
+
+                  <div class="button-row">
+                    <button id="send-request" type="submit">
+                      Send request
+                    </button>
+                    <button id="copy-curl" type="button">Copy cURL</button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <section class="response-box" aria-live="polite">
+              <div class="response-header">
+                <strong>Live Response</strong>
+                <div class="response-meta">
+                  <span class="tag" id="response-status">Waiting</span>
+                  <span class="tag" id="response-time">0 ms</span>
+                </div>
+              </div>
+              <div class="response-body">
+                <pre id="response-output">
+{
+  "message": "Choose a request preset and run it."
+}</pre
+                >
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="endpoints" class="playground">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Surface area</div>
+              <h2>Everything important is exposed and inspectable.</h2>
+            </div>
+            <p>
+              The deployment publishes a machine-readable index at
+              <span class="inline-code">/api</span>. These cards mirror that
+              contract and show how the integrity workflow is split across
+              ingestion, sealing, proof retrieval, verification, and public
+              anchor inspection.
+            </p>
+          </div>
+          <div class="endpoint-grid" id="endpoint-grid"></div>
+        </section>
+
+        <section id="workflow" class="playground">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Integrity flow</div>
+              <h2>How the system proves tamper evidence.</h2>
+            </div>
+            <p>
+              ProofChain is designed so verification can happen outside the
+              server. The public API exposes the exact artifacts needed to
+              recompute membership, validate signatures, and inspect anchor
+              continuity.
+            </p>
+          </div>
+          <div class="workflow">
+            <article class="workflow-step">
+              <span>01</span>
+              <h3>Ingest</h3>
+              <p>
+                Clients post immutable event envelopes and receive deterministic
+                SHA-256 hashes.
+              </p>
+            </article>
+            <article class="workflow-step">
+              <span>02</span>
+              <h3>Seal</h3>
+              <p>
+                Pending events are ordered into blocks, rooted with a Merkle
+                tree, and signed with Ed25519.
+              </p>
+            </article>
+            <article class="workflow-step">
+              <span>03</span>
+              <h3>Anchor</h3>
+              <p>
+                Sealed blocks are chained into append-only transparency
+                checkpoints for public inspection.
+              </p>
+            </article>
+            <article class="workflow-step">
+              <span>04</span>
+              <h3>Verify</h3>
+              <p>
+                Any client can fetch a proof envelope and verify membership,
+                signature, and anchor integrity.
+              </p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p class="footer-copy">
+          Portfolio-friendly root landing page, machine-readable API discovery
+          at <span class="inline-code">/api</span>, and live request testing in
+          one deployment.
+        </p>
+        <div class="footer-links">
+          <a href="/api">Open JSON index</a>
+          <a href="/api/health">Health</a>
+          <a href="/api">Machine JSON</a>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      const presets = {
+        index: {
+          method: "GET",
+          path: "/api",
+          body: ""
+        },
+        health: {
+          method: "GET",
+          path: "/api/health",
+          body: ""
+        },
+        "events-post": {
+          method: "POST",
+          path: "/api/events",
+          body: JSON.stringify(
+            {
+              service: "payment-service",
+              type: "transaction",
+              payload: {
+                user_id: "user_1245",
+                amount: 200,
+                currency: "USD"
+              }
+            },
+            null,
+            2
+          )
+        },
+        blocks: {
+          method: "GET",
+          path: "/api/blocks",
+          body: ""
+        },
+        anchors: {
+          method: "GET",
+          path: "/api/anchors",
+          body: ""
+        },
+        keys: {
+          method: "GET",
+          path: "/api/keys/current",
+          body: ""
+        },
+        "verify-post": {
+          method: "POST",
+          path: "/api/verify",
+          body: JSON.stringify(
+            {
+              schema_version: 1,
+              event_id: "evt_example",
+              event_hash: "sha256_hex",
+              block_id: "blk_example",
+              merkle_root: "sha256_hex",
+              algorithm: "Ed25519",
+              key_id: "main-2026-01",
+              signature: "base64_signature",
+              sealed_at: "2026-03-15T00:00:00.000Z",
+              proof: [],
+              public_key: "-----BEGIN PUBLIC KEY-----..."
+            },
+            null,
+            2
+          )
+        }
+      };
+
+      const requestPreset = document.getElementById("request-preset");
+      const requestMethod = document.getElementById("request-method");
+      const requestPath = document.getElementById("request-path");
+      const requestBody = document.getElementById("request-body");
+      const responseStatus = document.getElementById("response-status");
+      const responseTime = document.getElementById("response-time");
+      const responseOutput = document.getElementById("response-output");
+      const endpointGrid = document.getElementById("endpoint-grid");
+      const routeCount = document.getElementById("route-count");
+      const baseUrl = document.getElementById("base-url");
+      const terminalApiUrl = document.getElementById("terminal-api-url");
+
+      function applyPreset(key) {
+        const preset = presets[key];
+        requestMethod.value = preset.method;
+        requestPath.value = preset.path;
+        requestBody.value = preset.body;
+      }
+
+      function buildCurl() {
+        const method = requestMethod.value;
+        const path = requestPath.value.trim() || "/api";
+        const url = `${window.location.origin}${path}`;
+        const parts = [`curl -X ${method}`, `"${url}"`];
+
+        if (method !== "GET") {
+          parts.splice(1, 0, '-H "content-type: application/json"');
+          if (requestBody.value.trim()) {
+            const escaped = requestBody.value
+              .replace(/\\/g, "\\\\")
+              .replace(/"/g, '\\"')
+              .replace(/\n/g, "\\n");
+            parts.push(`-d "${escaped}"`);
+          }
+        }
+
+        return parts.join(" ");
+      }
+
+      async function sendRequest(event) {
+        event.preventDefault();
+        const method = requestMethod.value;
+        const path = requestPath.value.trim() || "/api";
+        const startedAt = performance.now();
+        const options = { method, headers: {} };
+
+        try {
+          if (method !== "GET" && requestBody.value.trim()) {
+            options.headers["content-type"] = "application/json";
+            options.body = JSON.stringify(JSON.parse(requestBody.value));
+          }
+
+          const response = await fetch(path, options);
+          const elapsed = Math.round(performance.now() - startedAt);
+          const text = await response.text();
+          let formatted = text;
+
+          try {
+            formatted = JSON.stringify(JSON.parse(text), null, 2);
+          } catch {
+            formatted = text || "<empty response>";
+          }
+
+          responseStatus.textContent = `${response.status} ${response.statusText}`;
+          responseTime.textContent = `${elapsed} ms`;
+          responseOutput.textContent = formatted;
+        } catch (error) {
+          const elapsed = Math.round(performance.now() - startedAt);
+          responseStatus.textContent = "Request failed";
+          responseTime.textContent = `${elapsed} ms`;
+          responseOutput.textContent = JSON.stringify(
+            {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown request failure"
+            },
+            null,
+            2
+          );
+        }
+      }
+
+      async function copyCurl() {
+        const command = buildCurl();
+        await navigator.clipboard.writeText(command);
+        responseStatus.textContent = "cURL copied";
+      }
+
+      function renderRoutes(routes) {
+        endpointGrid.innerHTML = "";
+        routeCount.textContent = String(routes.length);
+
+        routes.forEach((route) => {
+          const card = document.createElement("article");
+          card.className = "endpoint";
+          const methodClass = route.method.toLowerCase();
+          card.innerHTML = `
+            <div class="endpoint-top">
+              <span class="method ${methodClass}">${route.method}</span>
+              <span class="tag">${route.category || "api"}</span>
+            </div>
+            <h3>${route.description}</h3>
+            <p>${route.auth ? `Auth: ${route.auth}.` : "Public route."}</p>
+            <code>${route.path}</code>
+          `;
+          endpointGrid.appendChild(card);
+        });
+      }
+
+      async function loadIndex() {
+        baseUrl.textContent = window.location.origin;
+        terminalApiUrl.textContent = `${window.location.origin}/api`;
+
+        try {
+          const response = await fetch("/api");
+          const data = await response.json();
+
+          if (Array.isArray(data.routes)) {
+            renderRoutes(data.routes);
+          }
+
+          if (typeof data.base_url === "string") {
+            baseUrl.textContent = data.base_url;
+            terminalApiUrl.textContent = `${data.base_url}/api`;
+          }
+        } catch {
+          routeCount.textContent = "offline";
+          endpointGrid.innerHTML = `
+            <article class="endpoint">
+              <div class="endpoint-top">
+                <span class="method get">GET</span>
+                <span class="tag">fallback</span>
+              </div>
+              <h3>Machine-readable index unavailable</h3>
+              <p>The showcase still loads, but the live route catalog could not be fetched from <code>/api</code>.</p>
+              <code>/api</code>
+            </article>
+          `;
+        }
+      }
+
+      requestPreset.addEventListener("change", () =>
+        applyPreset(requestPreset.value)
+      );
+      document
+        .getElementById("request-form")
+        .addEventListener("submit", sendRequest);
+      document.getElementById("copy-curl").addEventListener("click", copyCurl);
+
+      applyPreset("index");
+      loadIndex();
+    </script>
+  </body>
+</html>
