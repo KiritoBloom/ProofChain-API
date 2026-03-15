@@ -6,67 +6,55 @@
     <title>ProofChain API</title>
     <meta
       name="description"
-      content="ProofChain API portfolio landing page with live endpoint discovery, request playground, and integrity workflow showcase."
+      content="ProofChain API — tamper-evident audit logging with deterministic hashing, Merkle proofs, and Ed25519 signatures. Interactive API showcase and portfolio piece."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
     />
     <style>
       :root {
-        --bg: #07111a;
-        --panel: rgba(10, 25, 38, 0.9);
-        --panel-strong: rgba(8, 18, 28, 0.96);
-        --line: rgba(109, 168, 212, 0.24);
-        --line-strong: rgba(109, 168, 212, 0.5);
-        --text: #edf6fb;
-        --muted: #97b6c8;
-        --accent: #79e0c5;
-        --accent-strong: #c9ff73;
-        --warning: #ffd58a;
-        --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-        --radius: 22px;
-        --mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
-        --sans: "Segoe UI", "Helvetica Neue", sans-serif;
+        --bg: #faf9f7;
+        --surface: #ffffff;
+        --ink: #1a1a18;
+        --ink-secondary: #5c5b57;
+        --ink-tertiary: #8a8985;
+        --rule: #d8d6d0;
+        --rule-light: #eae8e3;
+        --accent: #c23d2a;
+        --accent-hover: #a83220;
+        --code-bg: #f2f0ec;
+        --code-ink: #3a3935;
+        --input-border: #cccac4;
+        --input-focus: #1a1a18;
+        --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+        --sans: "DM Sans", "Helvetica Neue", Helvetica, sans-serif;
+        --mono: "JetBrains Mono", "Consolas", "SF Mono", monospace;
+        --measure: 72rem;
       }
 
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
       }
 
       html {
         scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       body {
         margin: 0;
         min-height: 100vh;
         font-family: var(--sans);
-        color: var(--text);
-        background:
-          radial-gradient(
-            circle at top left,
-            rgba(121, 224, 197, 0.18),
-            transparent 32%
-          ),
-          radial-gradient(
-            circle at top right,
-            rgba(201, 255, 115, 0.12),
-            transparent 26%
-          ),
-          linear-gradient(180deg, #08131d 0%, #07111a 55%, #050b12 100%);
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background-image:
-          linear-gradient(rgba(121, 224, 197, 0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(121, 224, 197, 0.05) 1px, transparent 1px);
-        background-size: 36px 36px;
-        mask-image: linear-gradient(
-          180deg,
-          rgba(0, 0, 0, 0.5),
-          transparent 95%
-        );
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--bg);
       }
 
       a {
@@ -74,691 +62,624 @@
         text-decoration: none;
       }
 
-      .shell {
-        width: min(1220px, calc(100% - 32px));
-        margin: 0 auto;
-        padding: 24px 0 56px;
+      h1,
+      h2,
+      h3,
+      p,
+      pre,
+      ul,
+      ol,
+      figure {
+        margin: 0;
       }
+
+      /* ── Layout shell ─────────────────────────────── */
+
+      .page {
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
+
+      /* ── Top bar ──────────────────────────────────── */
 
       .topbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 16px;
-        padding: 14px 18px;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: rgba(7, 17, 26, 0.72);
-        backdrop-filter: blur(18px);
-        box-shadow: var(--shadow);
-        position: sticky;
-        top: 18px;
-        z-index: 5;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid var(--rule);
       }
 
-      .brand,
-      .nav,
-      .statusline,
-      .stat-grid,
-      .hero-grid,
-      .playground-grid,
-      .endpoint-grid,
-      .workflow,
-      .footer-links {
+      .mark {
         display: flex;
-        gap: 14px;
-      }
-
-      .brand,
-      .statusline,
-      .hero-copy,
-      .terminal,
-      .card,
-      .panel,
-      .endpoint,
-      .workflow-step,
-      .response-box {
-        position: relative;
-      }
-
-      .brand {
         align-items: center;
+        gap: 0.625rem;
         font-family: var(--mono);
-        font-size: 0.93rem;
-        letter-spacing: 0.08em;
+        font-size: 0.8125rem;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
+        color: var(--ink);
       }
 
-      .brand-mark {
-        width: 11px;
-        height: 11px;
+      .mark-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
         border-radius: 50%;
-        background: linear-gradient(
-          135deg,
-          var(--accent),
-          var(--accent-strong)
-        );
-        box-shadow: 0 0 18px rgba(121, 224, 197, 0.7);
+        flex-shrink: 0;
       }
 
       .nav {
-        flex-wrap: wrap;
+        display: flex;
+        gap: 0.25rem;
         align-items: center;
-        justify-content: flex-end;
-      }
-
-      .nav a,
-      button,
-      select {
-        transition: 160ms ease;
       }
 
       .nav a {
-        padding: 8px 12px;
-        border-radius: 999px;
-        color: var(--muted);
-        font-size: 0.92rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--ink-secondary);
+        border-radius: 4px;
+        transition:
+          color 0.15s,
+          background 0.15s;
       }
 
       .nav a:hover,
       .nav a:focus-visible {
-        color: var(--text);
-        background: rgba(121, 224, 197, 0.1);
+        color: var(--ink);
+        background: var(--rule-light);
       }
 
-      .hero-grid,
-      .playground-grid {
-        align-items: stretch;
+      /* ── Hero ─────────────────────────────────────── */
+
+      .hero {
+        padding: 4rem 0 3rem;
+        border-bottom: 1px solid var(--rule);
       }
 
-      .hero-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-        gap: 24px;
-        padding: 34px 0 18px;
-      }
-
-      .hero-copy,
-      .terminal,
-      .panel,
-      .endpoint,
-      .workflow-step,
-      .card,
-      .response-box {
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: linear-gradient(
-          180deg,
-          rgba(13, 28, 41, 0.92),
-          rgba(7, 17, 26, 0.95)
-        );
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .hero-copy {
-        padding: 32px;
-      }
-
-      .eyebrow,
-      .chip,
-      .method,
-      .mini-label,
-      .tag {
+      .hero-label {
         font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .hero h1 {
+        margin-top: 1rem;
+        font-family: var(--serif);
+        font-size: clamp(2.5rem, 5.5vw, 4.25rem);
+        font-weight: 400;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      .hero-sub {
+        margin-top: 1.25rem;
+        max-width: 52ch;
+        font-size: 1.0625rem;
+        line-height: 1.7;
+        color: var(--ink-secondary);
+      }
+
+      .hero-meta {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--rule-light);
+      }
+
+      .hero-meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .hero-meta-label {
+        font-family: var(--mono);
+        font-size: 0.6875rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
+        color: var(--ink-tertiary);
       }
 
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--accent);
-        font-size: 0.78rem;
-      }
-
-      .eyebrow::before {
-        content: "";
-        width: 34px;
-        height: 1px;
-        background: currentColor;
-      }
-
-      h1,
-      h2,
-      h3,
-      p,
-      pre {
-        margin: 0;
-      }
-
-      h1 {
-        margin-top: 18px;
-        font-size: clamp(2.6rem, 7vw, 5.3rem);
-        line-height: 0.94;
-        letter-spacing: -0.06em;
-      }
-
-      .lead {
-        margin-top: 18px;
-        max-width: 58ch;
-        color: var(--muted);
-        font-size: 1.03rem;
-        line-height: 1.7;
-      }
-
-      .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 26px;
-      }
-
-      .button,
-      button {
-        appearance: none;
-        border: 0;
-        border-radius: 14px;
-        padding: 13px 16px;
-        font: inherit;
-        cursor: pointer;
-      }
-
-      .button.primary,
-      #send-request {
-        background: linear-gradient(
-          135deg,
-          var(--accent),
-          var(--accent-strong)
-        );
-        color: #041017;
-        font-weight: 700;
-      }
-
-      .button.secondary,
-      #copy-curl {
-        background: rgba(121, 224, 197, 0.08);
-        color: var(--text);
-        border: 1px solid rgba(121, 224, 197, 0.18);
-      }
-
-      .button:hover,
-      .button:focus-visible,
-      button:hover,
-      button:focus-visible {
-        transform: translateY(-1px);
-      }
-
-      .stat-grid {
-        flex-wrap: wrap;
-        margin-top: 28px;
-      }
-
-      .card {
-        flex: 1 1 180px;
-        min-width: 0;
-        padding: 18px;
-        background: rgba(8, 18, 28, 0.58);
-      }
-
-      .card strong {
-        display: block;
-        font-size: 1.5rem;
-        margin-top: 10px;
-      }
-
-      .mini-label {
-        color: var(--muted);
-        font-size: 0.74rem;
-      }
-
-      .terminal {
-        padding: 0;
-      }
-
-      .terminal-header,
-      .panel-header,
-      .response-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 16px 18px;
-        border-bottom: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.02);
-      }
-
-      .lights {
-        display: flex;
-        gap: 8px;
-      }
-
-      .lights span {
-        width: 11px;
-        height: 11px;
-        border-radius: 50%;
-      }
-
-      .lights span:nth-child(1) {
-        background: #ff7b72;
-      }
-
-      .lights span:nth-child(2) {
-        background: #ffd866;
-      }
-
-      .lights span:nth-child(3) {
-        background: #7ee787;
-      }
-
-      .terminal-body,
-      .response-box pre,
-      textarea,
-      input,
-      select,
-      .endpoint code,
-      .inline-code {
+      .hero-meta-value {
         font-family: var(--mono);
+        font-size: 0.8125rem;
+        color: var(--ink);
       }
 
-      .terminal-body {
-        padding: 20px;
-        display: grid;
-        gap: 16px;
+      /* ── Section rhythm ───────────────────────────── */
+
+      .section {
+        padding: 3rem 0;
+        border-bottom: 1px solid var(--rule);
       }
 
-      .terminal-line {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 14px;
-        font-size: 0.93rem;
+      .section:last-of-type {
+        border-bottom: none;
+      }
+
+      .section-number {
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-tertiary);
+      }
+
+      .section h2 {
+        margin-top: 0.5rem;
+        font-family: var(--serif);
+        font-size: clamp(1.75rem, 3vw, 2.25rem);
+        font-weight: 400;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+      }
+
+      .section-desc {
+        margin-top: 0.75rem;
+        max-width: 58ch;
+        color: var(--ink-secondary);
         line-height: 1.65;
       }
 
-      .prompt {
-        color: var(--accent-strong);
-      }
-
-      .muted {
-        color: var(--muted);
-      }
-
-      .playground {
-        padding-top: 22px;
-      }
-
-      .section-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: end;
-        margin-bottom: 16px;
-      }
-
-      .section-head p {
-        max-width: 64ch;
-        color: var(--muted);
-        line-height: 1.65;
-      }
+      /* ── Playground ───────────────────────────────── */
 
       .playground-grid {
         display: grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-        gap: 24px;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
       }
 
-      .panel,
-      .response-box {
-        background: linear-gradient(
-          180deg,
-          rgba(8, 18, 28, 0.96),
-          rgba(5, 11, 18, 0.98)
-        );
+      .pane {
+        border: 1px solid var(--rule);
+        background: var(--surface);
       }
 
-      .panel-body,
-      .response-body {
-        padding: 20px;
+      .pane-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--rule);
+        background: var(--code-bg);
+      }
+
+      .pane-title {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-secondary);
+      }
+
+      .pane-badge {
+        font-family: var(--mono);
+        font-size: 0.625rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 0.2rem 0.5rem;
+      }
+
+      .pane-body {
+        padding: 1.25rem;
       }
 
       form {
         display: grid;
-        gap: 16px;
+        gap: 1rem;
       }
 
       .field {
         display: grid;
-        gap: 8px;
+        gap: 0.375rem;
       }
 
       label {
-        color: var(--muted);
-        font-size: 0.92rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ink-secondary);
       }
 
       input,
       select,
       textarea {
         width: 100%;
-        border: 1px solid rgba(109, 168, 212, 0.28);
-        border-radius: 14px;
-        background: rgba(3, 10, 16, 0.86);
-        color: var(--text);
-        padding: 13px 14px;
-        font-size: 0.95rem;
+        border: 1px solid var(--input-border);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 0.625rem 0.75rem;
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        transition: border-color 0.15s;
       }
 
       textarea {
-        min-height: 214px;
+        min-height: 11rem;
         resize: vertical;
-        line-height: 1.55;
       }
 
       input:focus,
       select:focus,
       textarea:focus {
-        outline: 1px solid var(--accent);
-        border-color: var(--accent);
+        outline: none;
+        border-color: var(--input-focus);
       }
 
-      .row {
+      .method-path-row {
         display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 12px;
+        grid-template-columns: 6.5rem 1fr;
+        gap: 0.75rem;
       }
 
-      .button-row {
+      .btn-row {
         display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.25rem;
       }
 
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        padding: 7px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(121, 224, 197, 0.2);
-        color: var(--accent);
-        background: rgba(121, 224, 197, 0.07);
-        font-size: 0.72rem;
+      button {
+        appearance: none;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+
+      .btn-primary {
+        padding: 0.625rem 1.25rem;
+        background: var(--ink);
+        color: var(--bg);
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      }
+
+      .btn-primary:hover,
+      .btn-primary:focus-visible {
+        background: #333330;
+      }
+
+      .btn-secondary {
+        padding: 0.625rem 1.25rem;
+        background: transparent;
+        color: var(--ink-secondary);
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        border: 1px solid var(--rule);
+      }
+
+      .btn-secondary:hover,
+      .btn-secondary:focus-visible {
+        background: var(--code-bg);
+        color: var(--ink);
       }
 
       .response-meta {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        gap: 0.75rem;
+        align-items: center;
       }
 
-      .response-box pre {
+      .status-badge {
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-tertiary);
+      }
+
+      .response-output {
         margin: 0;
         white-space: pre-wrap;
         word-break: break-word;
-        color: #d9edf8;
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        line-height: 1.65;
+        color: var(--code-ink);
+      }
+
+      /* ── Endpoint table ───────────────────────────── */
+
+      .endpoint-table {
+        width: 100%;
+        margin-top: 2rem;
+        border-collapse: collapse;
+      }
+
+      .endpoint-table thead th {
+        text-align: left;
+        padding: 0.625rem 1rem;
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-tertiary);
+        border-bottom: 2px solid var(--ink);
+      }
+
+      .endpoint-table tbody td {
+        padding: 0.75rem 1rem;
         font-size: 0.9rem;
+        border-bottom: 1px solid var(--rule-light);
+        vertical-align: top;
+      }
+
+      .endpoint-table tbody tr:last-child td {
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .method-tag {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.5rem;
+        min-width: 3rem;
+        text-align: center;
+      }
+
+      .method-tag.get {
+        color: #2a6e4e;
+        background: #e8f5ee;
+      }
+
+      .method-tag.post {
+        color: #8a5c1e;
+        background: #fdf3e2;
+      }
+
+      .endpoint-path {
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        color: var(--ink);
+      }
+
+      .endpoint-desc {
+        color: var(--ink-secondary);
+        font-size: 0.875rem;
+      }
+
+      .endpoint-auth {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: var(--ink-tertiary);
+      }
+
+      /* ── Workflow steps ───────────────────────────── */
+
+      .workflow-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        margin-top: 2rem;
+        border: 1px solid var(--rule);
+      }
+
+      .wf-step {
+        padding: 1.5rem;
+        border-right: 1px solid var(--rule);
+        background: var(--surface);
+      }
+
+      .wf-step:last-child {
+        border-right: none;
+      }
+
+      .wf-number {
+        font-family: var(--serif);
+        font-size: 2rem;
+        line-height: 1;
+        color: var(--rule);
+      }
+
+      .wf-step h3 {
+        margin-top: 0.75rem;
+        font-family: var(--serif);
+        font-size: 1.25rem;
+        font-weight: 400;
+      }
+
+      .wf-step p {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--ink-secondary);
+      }
+
+      /* ── Footer ───────────────────────────────────── */
+
+      .footer {
+        padding: 2rem 0 3rem;
+        border-top: 1px solid var(--rule);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 2rem;
+      }
+
+      .footer-left {
+        max-width: 40ch;
+      }
+
+      .footer-note {
+        font-size: 0.875rem;
+        color: var(--ink-tertiary);
         line-height: 1.6;
       }
 
-      .endpoint-grid,
-      .workflow {
-        display: grid;
-        gap: 16px;
-      }
-
-      .endpoint-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-top: 16px;
-      }
-
-      .endpoint,
-      .workflow-step {
-        padding: 20px;
-      }
-
-      .endpoint-top {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .method {
-        display: inline-flex;
-        min-width: 62px;
-        justify-content: center;
-        padding: 8px 10px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 700;
-      }
-
-      .method.get {
-        background: rgba(121, 224, 197, 0.12);
-        color: var(--accent);
-      }
-
-      .method.post {
-        background: rgba(255, 213, 138, 0.12);
-        color: var(--warning);
-      }
-
-      .endpoint h3,
-      .workflow-step h3 {
-        margin-top: 14px;
-        font-size: 1.05rem;
-      }
-
-      .endpoint p,
-      .workflow-step p,
-      .footer-copy {
-        margin-top: 10px;
-        color: var(--muted);
-        line-height: 1.65;
-      }
-
-      .endpoint code {
-        display: block;
-        margin-top: 14px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: rgba(2, 8, 13, 0.92);
-        color: #ddf6ff;
-        font-size: 0.88rem;
-      }
-
-      .workflow {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-top: 16px;
-      }
-
-      .workflow-step span {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        background: rgba(121, 224, 197, 0.12);
-        color: var(--accent);
-        font-family: var(--mono);
-      }
-
-      footer {
-        margin-top: 30px;
-        padding: 24px 0 8px;
-      }
-
       .footer-links {
-        flex-wrap: wrap;
-        margin-top: 14px;
+        display: flex;
+        gap: 1.5rem;
       }
 
       .footer-links a {
-        color: var(--muted);
+        font-size: 0.875rem;
+        color: var(--ink-secondary);
+        transition: color 0.15s;
       }
 
       .footer-links a:hover,
       .footer-links a:focus-visible {
-        color: var(--text);
+        color: var(--ink);
       }
 
-      @media (max-width: 1080px) {
-        .hero-grid,
-        .playground-grid,
-        .endpoint-grid,
-        .workflow {
+      /* ── Responsive ───────────────────────────────── */
+
+      @media (max-width: 960px) {
+        .playground-grid {
           grid-template-columns: 1fr;
         }
-      }
 
-      @media (max-width: 720px) {
-        .shell {
-          width: min(100% - 20px, 1220px);
-          padding-top: 14px;
+        .workflow-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
 
-        .topbar,
-        .section-head {
-          align-items: flex-start;
+        .wf-step:nth-child(2) {
+          border-right: none;
+        }
+
+        .wf-step:nth-child(1),
+        .wf-step:nth-child(2) {
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .endpoint-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          padding: 0 1.25rem;
+        }
+
+        .topbar {
           flex-direction: column;
+          align-items: flex-start;
+          gap: 0.75rem;
         }
 
-        .hero-copy,
-        .terminal,
-        .panel-body,
-        .response-body,
-        .endpoint,
-        .workflow-step {
-          padding-left: 16px;
-          padding-right: 16px;
+        .hero {
+          padding: 2.5rem 0 2rem;
         }
 
-        .row {
+        .hero-meta {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .method-path-row {
           grid-template-columns: 1fr;
         }
 
-        h1 {
-          font-size: 2.45rem;
+        .workflow-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .wf-step {
+          border-right: none;
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .wf-step:last-child {
+          border-bottom: none;
+        }
+
+        .footer {
+          flex-direction: column;
         }
       }
     </style>
   </head>
   <body>
-    <div class="shell">
+    <div class="page">
       <header class="topbar">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true"></span>
+        <div class="mark">
+          <span class="mark-dot" aria-hidden="true"></span>
           <span>ProofChain API</span>
         </div>
         <nav class="nav" aria-label="Primary">
           <a href="#playground">Playground</a>
           <a href="#endpoints">Endpoints</a>
           <a href="#workflow">Workflow</a>
-          <a href="/api" target="_blank" rel="noreferrer">JSON Index</a>
+          <a href="/api" target="_blank" rel="noreferrer">JSON&nbsp;Index</a>
         </nav>
       </header>
 
       <main>
-        <section class="hero-grid">
-          <div class="hero-copy">
-            <div class="eyebrow">Tamper-evident audit logging</div>
-            <h1>Interactive API showcase for verifiable integrity.</h1>
-            <p class="lead">
-              ProofChain turns incoming events into deterministic hashes, sealed
-              Merkle blocks, signed proofs, and chained transparency anchors.
-              This landing page doubles as a portfolio piece and a live control
-              surface for the deployed API.
-            </p>
-            <div class="hero-actions">
-              <a class="button primary" href="#playground">Try live requests</a>
-              <a
-                class="button secondary"
-                href="/api"
-                target="_blank"
-                rel="noreferrer"
-                >Open machine JSON</a
-              >
+        <!-- ── Hero ──────────────────────────── -->
+        <section class="hero">
+          <div class="hero-label">Tamper-evident audit logging</div>
+          <h1>
+            Cryptographic integrity<br />
+            as a verifiable API.
+          </h1>
+          <p class="hero-sub">
+            ProofChain accepts events, computes deterministic hashes, seals them
+            into Merkle blocks, signs roots with Ed25519, and returns
+            independently verifiable proofs. This page is both a portfolio piece
+            and a live control surface for the deployed system.
+          </p>
+          <div class="hero-meta">
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Base URL</span>
+              <span class="hero-meta-value" id="base-url">loading&hellip;</span>
             </div>
-            <div class="stat-grid">
-              <article class="card">
-                <div class="mini-label">Base URL</div>
-                <strong id="base-url">Loading...</strong>
-              </article>
-              <article class="card">
-                <div class="mini-label">Published endpoints</div>
-                <strong id="route-count">--</strong>
-              </article>
-              <article class="card">
-                <div class="mini-label">Verification stack</div>
-                <strong>SHA-256 + Ed25519</strong>
-              </article>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Endpoints</span>
+              <span class="hero-meta-value" id="route-count">&mdash;</span>
+            </div>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Signing</span>
+              <span class="hero-meta-value">Ed25519</span>
+            </div>
+            <div class="hero-meta-item">
+              <span class="hero-meta-label">Hashing</span>
+              <span class="hero-meta-value">SHA-256</span>
             </div>
           </div>
-
-          <aside class="terminal" aria-label="API terminal preview">
-            <div class="terminal-header">
-              <div class="lights" aria-hidden="true">
-                <span></span><span></span><span></span>
-              </div>
-              <div class="mini-label">Integrity Terminal</div>
-            </div>
-            <div class="terminal-body">
-              <div class="terminal-line">
-                <span class="prompt">$</span>
-                <div>
-                  curl
-                  <span class="muted" id="terminal-api-url"
-                    >https://proof-chain-api.vercel.app/api</span
-                  >
-                </div>
-              </div>
-              <div class="terminal-line">
-                <span class="prompt">&gt;</span>
-                <div>{ "status": "api-ready", "phase": "Complete" }</div>
-              </div>
-              <div class="terminal-line">
-                <span class="prompt">$</span>
-                <div>
-                  POST /api/events -> canonical hash -> sealed block -> proof ->
-                  verify
-                </div>
-              </div>
-              <div class="terminal-line">
-                <span class="prompt">&gt;</span>
-                <div class="muted">
-                  Live endpoint discovery loads below, and you can run sample
-                  GET and POST requests directly from the page.
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
 
-        <section class="playground" id="playground">
-          <div class="section-head">
-            <div>
-              <div class="eyebrow">Interactive API showcase</div>
-              <h2>Send live requests from the portfolio page.</h2>
-            </div>
-            <p>
-              Choose a prepared request, tweak the path or JSON body, then
-              inspect the live response. Public routes work immediately;
-              protected routes are shown so the API surface is easy to
-              understand.
-            </p>
-          </div>
+        <!-- ── Playground ────────────────────── -->
+        <section class="section" id="playground">
+          <span class="section-number"
+            >01 &mdash; Interactive API showcase</span
+          >
+          <h2>Send live requests from this page.</h2>
+          <p class="section-desc">
+            Choose a preset, adjust the path or body, then send. Public routes
+            respond immediately. Protected routes surface the expected auth
+            contract without requiring credentials.
+          </p>
 
           <div class="playground-grid">
-            <section class="panel">
-              <div class="panel-header">
-                <strong>Request Builder</strong>
-                <span class="tag">Live against this deployment</span>
+            <div class="pane">
+              <div class="pane-header">
+                <span class="pane-title">Request</span>
+                <span class="pane-badge">Live</span>
               </div>
-              <div class="panel-body">
+              <div class="pane-body">
                 <form id="request-form">
                   <div class="field">
-                    <label for="request-preset">Example request</label>
+                    <label for="request-preset">Preset</label>
                     <select id="request-preset" name="request-preset">
                       <option value="index">GET /api</option>
                       <option value="health">GET /api/health</option>
@@ -770,7 +691,7 @@
                     </select>
                   </div>
 
-                  <div class="row">
+                  <div class="method-path-row">
                     <div class="field">
                       <label for="request-method">Method</label>
                       <select id="request-method" name="request-method">
@@ -790,7 +711,7 @@
                   </div>
 
                   <div class="field">
-                    <label for="request-body">JSON body</label>
+                    <label for="request-body">Body</label>
                     <textarea id="request-body" name="request-body">
 {
   "service": "payment-service",
@@ -804,112 +725,128 @@
                     >
                   </div>
 
-                  <div class="button-row">
-                    <button id="send-request" type="submit">
+                  <div class="btn-row">
+                    <button class="btn-primary" id="send-request" type="submit">
                       Send request
                     </button>
-                    <button id="copy-curl" type="button">Copy cURL</button>
+                    <button class="btn-secondary" id="copy-curl" type="button">
+                      Copy cURL
+                    </button>
                   </div>
                 </form>
               </div>
-            </section>
+            </div>
 
-            <section class="response-box" aria-live="polite">
-              <div class="response-header">
-                <strong>Live Response</strong>
+            <div class="pane">
+              <div class="pane-header">
+                <span class="pane-title">Response</span>
                 <div class="response-meta">
-                  <span class="tag" id="response-status">Waiting</span>
-                  <span class="tag" id="response-time">0 ms</span>
+                  <span class="status-badge" id="response-status">Waiting</span>
+                  <span class="status-badge" id="response-time">0 ms</span>
                 </div>
               </div>
-              <div class="response-body">
-                <pre id="response-output">
+              <div class="pane-body" aria-live="polite">
+                <pre class="response-output" id="response-output">
 {
-  "message": "Choose a request preset and run it."
+  "message": "Choose a request preset and press Send."
 }</pre
                 >
               </div>
-            </section>
+            </div>
           </div>
         </section>
 
-        <section id="endpoints" class="playground">
-          <div class="section-head">
-            <div>
-              <div class="eyebrow">Surface area</div>
-              <h2>Everything important is exposed and inspectable.</h2>
-            </div>
-            <p>
-              The deployment publishes a machine-readable index at
-              <span class="inline-code">/api</span>. These cards mirror that
-              contract and show how the integrity workflow is split across
-              ingestion, sealing, proof retrieval, verification, and public
-              anchor inspection.
-            </p>
-          </div>
-          <div class="endpoint-grid" id="endpoint-grid"></div>
+        <!-- ── Endpoints ─────────────────────── -->
+        <section class="section" id="endpoints">
+          <span class="section-number">02 &mdash; Surface area</span>
+          <h2>Every route is documented and inspectable.</h2>
+          <p class="section-desc">
+            The deployment publishes a machine-readable index at
+            <code style="font-family: var(--mono); font-size: 0.9em">/api</code
+            >. This table mirrors that contract.
+          </p>
+
+          <table class="endpoint-table" id="endpoint-table">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Path</th>
+                <th>Description</th>
+                <th>Auth</th>
+              </tr>
+            </thead>
+            <tbody id="endpoint-tbody">
+              <tr>
+                <td
+                  colspan="4"
+                  style="color: var(--ink-tertiary); font-style: italic"
+                >
+                  Loading routes from /api&hellip;
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
-        <section id="workflow" class="playground">
-          <div class="section-head">
-            <div>
-              <div class="eyebrow">Integrity flow</div>
-              <h2>How the system proves tamper evidence.</h2>
-            </div>
-            <p>
-              ProofChain is designed so verification can happen outside the
-              server. The public API exposes the exact artifacts needed to
-              recompute membership, validate signatures, and inspect anchor
-              continuity.
-            </p>
-          </div>
-          <div class="workflow">
-            <article class="workflow-step">
-              <span>01</span>
+        <!-- ── Workflow ──────────────────────── -->
+        <section class="section" id="workflow">
+          <span class="section-number">03 &mdash; Integrity flow</span>
+          <h2>How the system proves tamper evidence.</h2>
+          <p class="section-desc">
+            Verification can happen entirely outside the server. The public API
+            exposes every artifact needed to recompute membership, validate
+            signatures, and inspect anchor continuity.
+          </p>
+
+          <div class="workflow-grid">
+            <article class="wf-step">
+              <div class="wf-number">1</div>
               <h3>Ingest</h3>
               <p>
-                Clients post immutable event envelopes and receive deterministic
-                SHA-256 hashes.
+                Clients post immutable event envelopes. Each receives a
+                deterministic SHA-256 hash computed from canonical JSON.
               </p>
             </article>
-            <article class="workflow-step">
-              <span>02</span>
+            <article class="wf-step">
+              <div class="wf-number">2</div>
               <h3>Seal</h3>
               <p>
                 Pending events are ordered into blocks, rooted with a Merkle
-                tree, and signed with Ed25519.
+                tree, and signed with Ed25519 using a versioned key.
               </p>
             </article>
-            <article class="workflow-step">
-              <span>03</span>
+            <article class="wf-step">
+              <div class="wf-number">3</div>
               <h3>Anchor</h3>
               <p>
                 Sealed blocks are chained into append-only transparency
-                checkpoints for public inspection.
+                checkpoints available for public inspection.
               </p>
             </article>
-            <article class="workflow-step">
-              <span>04</span>
+            <article class="wf-step">
+              <div class="wf-number">4</div>
               <h3>Verify</h3>
               <p>
-                Any client can fetch a proof envelope and verify membership,
-                signature, and anchor integrity.
+                Any client can fetch a proof envelope and independently verify
+                membership, signature, and anchor integrity.
               </p>
             </article>
           </div>
         </section>
       </main>
 
-      <footer>
-        <p class="footer-copy">
-          Portfolio-friendly root landing page, machine-readable API discovery
-          at <span class="inline-code">/api</span>, and live request testing in
-          one deployment.
-        </p>
+      <footer class="footer">
+        <div class="footer-left">
+          <p class="footer-note">
+            Portfolio landing page with live API discovery at
+            <code style="font-family: var(--mono); font-size: 0.9em">/api</code>
+            and interactive request testing.
+          </p>
+        </div>
         <div class="footer-links">
-          <a href="/api">Open JSON index</a>
-          <a href="/api/health">Health</a>
-          <a href="/api">Machine JSON</a>
+          <a href="/api" target="_blank" rel="noreferrer">JSON Index</a>
+          <a href="/api/health" target="_blank" rel="noreferrer">Health</a>
+          <a href="/api/blocks" target="_blank" rel="noreferrer">Blocks</a>
         </div>
       </footer>
     </div>
@@ -988,10 +925,9 @@
       const responseStatus = document.getElementById("response-status");
       const responseTime = document.getElementById("response-time");
       const responseOutput = document.getElementById("response-output");
-      const endpointGrid = document.getElementById("endpoint-grid");
+      const endpointTbody = document.getElementById("endpoint-tbody");
       const routeCount = document.getElementById("route-count");
       const baseUrl = document.getElementById("base-url");
-      const terminalApiUrl = document.getElementById("terminal-api-url");
 
       function applyPreset(key) {
         const preset = presets[key];
@@ -1071,29 +1007,24 @@
       }
 
       function renderRoutes(routes) {
-        endpointGrid.innerHTML = "";
+        endpointTbody.innerHTML = "";
         routeCount.textContent = String(routes.length);
 
         routes.forEach((route) => {
-          const card = document.createElement("article");
-          card.className = "endpoint";
+          const tr = document.createElement("tr");
           const methodClass = route.method.toLowerCase();
-          card.innerHTML = `
-            <div class="endpoint-top">
-              <span class="method ${methodClass}">${route.method}</span>
-              <span class="tag">${route.category || "api"}</span>
-            </div>
-            <h3>${route.description}</h3>
-            <p>${route.auth ? `Auth: ${route.auth}.` : "Public route."}</p>
-            <code>${route.path}</code>
+          tr.innerHTML = `
+            <td><span class="method-tag ${methodClass}">${route.method}</span></td>
+            <td class="endpoint-path">${route.path}</td>
+            <td class="endpoint-desc">${route.description}</td>
+            <td class="endpoint-auth">${route.auth || "public"}</td>
           `;
-          endpointGrid.appendChild(card);
+          endpointTbody.appendChild(tr);
         });
       }
 
       async function loadIndex() {
         baseUrl.textContent = window.location.origin;
-        terminalApiUrl.textContent = `${window.location.origin}/api`;
 
         try {
           const response = await fetch("/api");
@@ -1105,20 +1036,15 @@
 
           if (typeof data.base_url === "string") {
             baseUrl.textContent = data.base_url;
-            terminalApiUrl.textContent = `${data.base_url}/api`;
           }
         } catch {
           routeCount.textContent = "offline";
-          endpointGrid.innerHTML = `
-            <article class="endpoint">
-              <div class="endpoint-top">
-                <span class="method get">GET</span>
-                <span class="tag">fallback</span>
-              </div>
-              <h3>Machine-readable index unavailable</h3>
-              <p>The showcase still loads, but the live route catalog could not be fetched from <code>/api</code>.</p>
-              <code>/api</code>
-            </article>
+          endpointTbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="color: var(--ink-tertiary); font-style: italic">
+                Could not load routes from /api. The deployment may be offline.
+              </td>
+            </tr>
           `;
         }
       }
